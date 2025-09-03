@@ -1,70 +1,206 @@
-# streamlit_app.py
 import os
 import shutil
 import hashlib
 import time
+import base64
+from urllib.parse import urlparse
+
 import numpy as np
 from PIL import Image
 import streamlit as st
 from ultralytics import YOLO
 import cv2
 
-# ───────────────────────────── Page ─────────────────────────────
 st.set_page_config(page_title="When AI Sees Litter · Shibuya", page_icon="♻️", layout="wide")
 
-# ───────────────────────────── Theme base (keeps your old look) ─────────────────────────────
+# ======================= Helpers =======================
+def data_url(path: str, fallback: str | None = None) -> str:
+    """Return a data: URL for a local image if it exists, else the fallback URL (or empty string)."""
+    try:
+        if path and os.path.exists(path):
+            with open(path, "rb") as f:
+                b64 = base64.b64encode(f.read()).decode("ascii")
+            ext = (os.path.splitext(path)[1].lstrip(".") or "png").lower()
+            return f"data:image/{ext};base64,{b64}"
+    except Exception:
+        pass
+    return fallback or ""
+
+def _domain_label(url: str) -> str:
+    try:
+        return urlparse(url).netloc.replace("www.", "")
+    except Exception:
+        return "link"
+
+# ======================= THEME / NAV / HERO =======================
 def apply_theme():
-    st.markdown("""
+    nav_logo = data_url("logo.png", None)  # None -> hide if missing
+    nav_brand_img = f'<img class="brand-logo" src="{nav_logo}" alt="logo"/>' if nav_logo else ""
+
+    st.markdown(f"""
     <style>
-      :root{
-        --pri:#79C16D; --pri2:#4FA25A; --hi:#CFEAC0; --bg:#FAFEF6; --card:#FFFFFF;
-        --txt:#0F2A1C; --mut:#6F8B7A; --pill:#EEF7E9; --bd:#E5EFE3;
-      }
-      html, body, [data-testid="stAppViewContainer"]{ background:var(--bg); color:var(--txt); }
-      .main .block-container{ padding-top:1rem !important; max-width:1200px; }
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;700;900&display=swap');
 
-      .pill{ display:inline-block; background:var(--pill); padding:2px 10px 4px 10px;
-             border-radius:999px; color:var(--pri2); border:1px solid var(--bd); }
-      .eco-links{ display:flex; gap:10px; margin-top:10px; margin-bottom:22px; flex-wrap:wrap; }
-      .eco-link{ border-radius:999px; padding:8px 12px; border:1px solid var(--bd);
-                 background:#fff; text-decoration:none !important; color:var(--pri2) !important; font-weight:700; }
-      .eco-link:hover{ background:var(--pill); }
-      .citybadge{ display:inline-block; background:var(--pill); padding:4px 10px;
-                  border-radius:999px; border:1px solid var(--bd); color:var(--pri2); }
+    :root{{
+      /* brand */
+      --pri:#79C16D; --pri2:#4FA25A; --hi:#CFEAC0; --bg:#FAFEF6; --card:#FFFFFF;
+      --txt:#0F2A1C; --mut:#6F8B7A; --pill:#EEF7E9; --bd:#E5EFE3;
+      /* hero */
+      --bg2:#f5f7f2; --hero:#6f8f2b; --hero2:#6b8a2c;
+    }}
+    html, body, [data-testid="stAppViewContainer"]{{
+      background:var(--bg2); color:var(--txt); font-family:'Poppins',ui-sans-serif;
+    }}
+    .main .block-container{{ padding-top:0.6rem !important; max-width:1120px; }}
+    html{{ scroll-behavior:smooth; }}
 
-      .eco-card{ background:#fff; border:none; border-radius:22px; padding:18px 16px;
-                 margin:10px 0 18px 0; box-shadow:0 3px 16px rgba(0,0,0,.04); }
-      .eco-head{ display:flex; align-items:center; gap:10px; margin-bottom:6px; }
-      .eco-emoji{ font-size:1.5rem; }
-      .eco-title{ font-weight:900; font-size:1.28rem; }
-      .eco-badge{ margin-left:auto; background:var(--pill); color:var(--pri2);
-                  border:1px solid var(--bd); border-radius:999px; padding:4px 10px; font-size:.85rem; }
+    /* --- navbar --- */
+    .nav{{
+      position:sticky; top:0; z-index:50; display:flex; align-items:center; justify-content:space-between;
+      padding:14px 8px; background:rgba(245,247,242,.9);
+      -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+      border-bottom:1px solid var(--bd);
+    }}
+    .brand{{ display:flex; align-items:center; gap:10px; font-weight:900; letter-spacing:-.02em; }}
+    .brand-logo{{
+      height:22px; width:22px; object-fit:contain; border-radius:6px; background:#fff; padding:2px;
+      box-shadow:0 0 0 1px rgba(0,0,0,.06) inset;
+    }}
+    .links{{ display:flex; gap:18px; font-weight:700; }}
+    .links a{{ color:inherit !important; text-decoration:none; }}
+    .links a:hover{{ text-decoration:underline; }}
 
-      .eco-section-title-primary{ font-weight:900; font-size:1.12rem; color:var(--pri2); margin:8px 0 6px 0; }
-      .eco-section-title{ font-weight:800; margin:8px 0 4px 0; }
-      .eco-list{ margin:0 0 4px 0; padding-left:18px; }
-      .eco-list li{ margin:2px 0; }
-      .chip-row{ display:flex; flex-wrap:wrap; gap:8px; margin:6px 0 2px 0; }
-      .chip{ background:var(--pill); color:var(--pri2); border:1px solid var(--bd);
-             border-radius:999px; padding:4px 10px; font-size:.88rem; }
+    /* --- hero --- */
+    .hero{{
+      margin:16px 0 24px; padding:28px; border-radius:28px; color:#fff;
+      background:linear-gradient(180deg,var(--hero),var(--hero2));
+      box-shadow:0 20px 60px rgba(70,90,30,.22);
+    }}
+    .hero-grid{{ display:grid; grid-template-columns:1.25fr 1fr; gap:24px; align-items:center; }}
+    .hero h1{{ font-size:clamp(28px,5vw,62px); line-height:1.05; margin:0 0 8px; font-weight:900; }}
+    .sub{{ opacity:.95; font-size:clamp(14px,1.1vw,18px); max-width:560px; }}
+    .rule{{ height:1px; background:rgba(255,255,255,.28); margin:14px 0; }}
+    .chips{{ display:flex; gap:8px; flex-wrap:wrap; }}
+    .chip{{ background:rgba(255,255,255,.16); border:1px solid rgba(255,255,255,.28);
+           padding:6px 10px; border-radius:999px; font-weight:700; }}
+    .cta{{ display:inline-block; margin-top:16px; padding:12px 18px; border-radius:999px; font-weight:900;
+          background:#0e0e0e; color:#fff !important; text-decoration:none; box-shadow:0 10px 24px rgba(0,0,0,.25); }}
 
-      .sdg-caption{ text-align:center; font-weight:800; margin-top:10px; }
+    /* hero photo: white circle for transparent logos */
+    .photo{{ position:relative; height:320px; }}
+    .photo .circle{{
+      position:absolute; right:-6%; top:0; height:100%; aspect-ratio:1/1;
+      background:#fff !important; border-radius:50%;
+      border:10px solid #fff; box-shadow:0 10px 50px rgba(0,0,0,.35);
+      display:flex; align-items:center; justify-content:center; overflow:hidden;
+    }}
+    .photo .circle img{{ width:86%; height:86%; object-fit:contain; background:#fff !important; border:none; }}
+    @media (max-width: 900px){{
+      .hero-grid{{ grid-template-columns:1fr; }}
+      .photo{{ height:220px; }}
+      .photo .circle{{ right:auto; left:50%; transform:translateX(-50%); }}
+    }}
 
-      /* Remove separators / borders */
-      [data-testid="stDivider"], hr, [role="separator"]{ display:none !important; }
-      [data-testid="stExpander"] details, [data-testid="stExpander"] summary{
-        border:none !important; box-shadow:none !important; background:transparent !important;
-      }
-      [data-testid="stHorizontalBlock"], [data-testid="stVerticalBlock"]{
-        border:none !important; box-shadow:none !important; background:transparent !important;
-      }
-      [data-testid="stHeader"]{ background:transparent !important; }
-      [data-testid="stHeader"] div{ border:none !important; box-shadow:none !important; }
+    /* ===== Section container covers ===== */
+    .section{{
+      background:var(--card);
+      border:1px solid var(--bd);
+      border-radius:22px;
+      overflow:hidden;
+      box-shadow:0 6px 24px rgba(0,0,0,.06);
+      margin:14px 0 28px;
+    }}
+    .section-cover{{
+      display:flex; align-items:center; gap:10px;
+      padding:14px 18px;
+      background:linear-gradient(90deg, var(--pri2), var(--pri));
+      color:#fff;
+    }}
+    .section-cover .eco-emoji{{ font-size:1.2rem; }}
+    .section-cover .title{{ font-weight:900; font-size:1.08rem; letter-spacing:-.01em; }}
+    .section-cover .badge{{
+      margin-left:auto; background:rgba(255,255,255,.18);
+      border:1px solid rgba(255,255,255,.28);
+      padding:4px 10px; border-radius:999px; font-size:.85rem;
+    }}
+    .section-body{{ padding:16px 18px; }}
+
+    /* --- original eco UI bits --- */
+    .pill{{ display:inline-block; background:var(--pill); padding:2px 10px 4px 10px;
+           border-radius:999px; color:var(--pri2); border:1px solid var(--bd); }}
+    .eco-links{{ display:flex; gap:10px; margin-top:10px; margin-bottom:22px; flex-wrap:wrap; }}
+    .eco-link{{ border-radius:999px; padding:8px 12px; border:1px solid var(--bd);
+               background:#fff; text-decoration:none !important; color:var(--pri2) !important; font-weight:700; }}
+    .eco-link:hover{{ background:var(--pill); }}
+    .citybadge{{ display:inline-block; background:var(--pill); padding:4px 10px;
+                border-radius:999px; border:1px solid var(--bd); color:var(--pri2); }}
+    .badge-align{{ margin-top:28px; }} @media (max-width:640px){{ .badge-align{{ margin-top:8px; }} }}
+
+    .eco-card{{ background:#fff; border:none; border-radius:22px; padding:18px 16px;
+               margin:10px 0 18px 0; box-shadow:0 3px 16px rgba(0,0,0,.04); }}
+    .eco-head{{ display:flex; align-items:center; gap:10px; margin-bottom:6px; }}
+    .eco-emoji{{ font-size:1.5rem; }}
+    .eco-title{{ font-weight:900; font-size:1.28rem; }}
+    .eco-badge{{ margin-left:auto; background:var(--pill); color:var(--pri2);
+                border:1px solid var(--bd); border-radius:999px; padding:4px 10px; font-size:.85rem; }}
+
+    .eco-section-title-primary{{ font-weight:900; font-size:1.12rem; color:var(--pri2); margin:8px 0 6px 0; }}
+    .eco-section-title{{ font-weight:800; margin:8px 0 4px 0; }}
+    .eco-list{{ margin:0 0 4px 0; padding-left:18px; }}
+    .eco-list li{{ margin:2px 0; }}
+    .chip-row{{ display:flex; flex-wrap:wrap; gap:8px; margin:6px 0 2px 0; }}
+    .chip{{ background:var(--pill); color:var(--pri2); border:1px solid var(--bd);
+           border-radius:999px; padding:4px 10px; font-size:.88rem; }}
+
+    .sdg-caption{{ text-align:center; font-weight:800; margin-top:10px; }}
+
+    /* remove default separators */
+    [data-testid="stDivider"], hr, [role="separator"]{{ display:none !important; }}
+    [data-testid="stExpander"] details, [data-testid="stExpander"] summary{{
+      border:none !important; box-shadow:none !important; background:transparent !important;
+    }}
+    [data-testid="stHorizontalBlock"], [data-testid="stVerticalBlock"]{{
+      border:none !important; box-shadow:none !important; background:transparent !important;
+    }}
+    [data-testid="stHeader"]{{ background:transparent !important; }}
+    [data-testid="stHeader"] div{{ border:none !important; box-shadow:none !important; }}
     </style>
+
+    <div class="nav">
+      <div class="brand">{nav_brand_img}<span>When AI Sees Litter</span></div>
+      <div class="links">
+        <a href="#features">App features</a>
+        <a href="#sdgs">Impact &amp; SDGs</a>
+        <a href="#about">About us</a>
+      </div>
+    </div>
     """, unsafe_allow_html=True)
+
 apply_theme()
 
-# ───────────────────────────── Config & Model ─────────────────────────────
+# ======================= Hero =======================
+hero_img = data_url(
+    "logo.png",
+    "https://images.unsplash.com/photo-1501004318641-b39e6451bec6?q=80&w=1080&auto=format&fit=crop"
+)
+st.markdown(f"""
+<div class="hero">
+  <div class="hero-grid">
+    <div>
+      <h1>Let's Start Sorting</h1>
+      <div class="sub">Point your camera at any item and get instant, city-specific disposal guidance across Japan.</div>
+      <div class="rule"></div>
+      <div class="chips">
+        <span class="chip">Recycling</span><span class="chip">Disposal guide</span><span class="chip">AI</span>
+      </div>
+      <a class="cta" href="#features">Start now</a>
+    </div>
+    <div class="photo"><div class="circle"><img src="{hero_img}" alt="hero"/></div></div>
+  </div>
+</div>
+""", unsafe_allow_html=True)
+
+# ======================= Config & Model =======================
 MODEL_URL   = os.getenv("MODEL_URL", "https://raw.githubusercontent.com/Bellzum/streamlit-main/main/new_taco1.pt")
 LOCAL_MODEL = os.getenv("LOCAL_MODEL", "best.pt")
 
@@ -91,8 +227,16 @@ ICON_PET   = "https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/Recyclin
 ICON_AL    = "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Recycling_alumi.svg/120px-Recycling_alumi.svg.png"
 ICON_STEEL = "https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Recycling_steel.svg/120px-Recycling_steel.svg.png"
 ICON_PLA   = "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8b/Recycling_pla.svg/120px-Recycling_pla.svg.png"
+LINK_UN_CNP  = "https://unfccc.int/climate-action/united-nations-carbon-offset-platform"
+LINK_UN_CNP2 = "https://offset.climateneutralnow.org/"
+LINK_WB_MRV  = "https://www.worldbank.org/en/news/feature/2022/07/27/what-you-need-to-know-about-the-measurement-reporting-and-verification-mrv-of-carbon-credits"
+LINK_GS      = "https://www.goldstandard.org/"
+LINK_VERRA   = "https://verra.org/programs/verified-carbon-standard/"
+LINK_JCREDIT = "https://japancredit.go.jp/english/"
+HANWA_CAN2CAN = "https://www.hanwa.co.jp/images/csr/business/img_5_01.png"
+CCBJI_CAN2CAN = "https://en.ccbji.co.jp/upload/images/20221222-1-1(5).jpg"
 
-# ───────────────────────────── Guidance (Shibuya) ─────────────────────────────
+# ======================= Guidance content (Shibuya) =======================
 GUIDE_SHIBUYA = {
     "Clear plastic bottle": {
         "title": "Shibuya disposal: PET bottle",
@@ -141,9 +285,9 @@ GUIDE_SHIBUYA = {
             {"text": "Coca Cola Bottlers Japan promotes can to can with recycled aluminum bodies.",
              "url": "https://en.ccbji.co.jp/news/detail.php?id=1347"},
             {"text": "Hanwa explains used aluminum cans are cleaned, melted and supplied as remelt scrap ingots then used again as cans.",
-             "url": "https://www.hanwa.co.jp/images/csr/business/img_5_01.png"},
+             "url": HANWA_CAN2CAN},
         ],
-        "images": ["https://www.hanwa.co.jp/images/csr/business/img_5_01.png"],
+        "images": [HANWA_CAN2CAN, CCBJI_CAN2CAN],
         "icons": [ICON_AL, ICON_STEEL],
         "link": SHIBUYA_GUIDE_URL,
         "poster": SHIBUYA_POSTER_EN,
@@ -175,7 +319,7 @@ GUIDE_SHIBUYA = {
 GUIDE_BY_CITY = {"shibuya": GUIDE_SHIBUYA}
 CITY_MAP = {"Shibuya (Tokyo)": "shibuya"}
 
-# ───────────────────────────── Model helpers ─────────────────────────────
+# ======================= Download / load model =======================
 def _download_file(url: str, dest: str):
     os.makedirs(os.path.dirname(dest), exist_ok=True)
     try:
@@ -200,7 +344,8 @@ def _download_file(url: str, dest: str):
 
 def _ensure_model_path() -> str:
     if MODEL_URL.strip().startswith("http"):
-        if not os.path.exists(CACHED_PATH):
+        CACHED = os.path.exists(CACHED_PATH)
+        if not CACHED:
             _download_file(MODEL_URL.strip(), CACHED_PATH)
         return CACHED_PATH
     if not os.path.exists(LOCAL_MODEL):
@@ -230,7 +375,7 @@ def load_model():
 
 GLOBAL_MODEL = load_model()
 
-# ───────────────────────────── UI helpers ─────────────────────────────
+# ======================= Guidance rendering helpers =======================
 def _get_names_map(pred, model):
     if FORCE_CLASS_NAMES:
         return {i: n for i, n in enumerate(TARGET_NAMES)}
@@ -271,7 +416,9 @@ def _guidance_text(info: dict):
             st.markdown(f'<li>{fact["text"]}</li>', unsafe_allow_html=True)
         st.markdown('</ul>', unsafe_allow_html=True)
         st.markdown('<div class="eco-links">', unsafe_allow_html=True)
-        for fact in facts: _guide_link(fact["url"], "Learn more")
+        for fact in facts:
+            dom = _domain_label(fact["url"])
+            _guide_link(fact["url"], f"Learn more · {dom}")
         st.markdown('</div>', unsafe_allow_html=True)
 
 def show_guidance_card(label: str, count: int = 0, GUIDE=None):
@@ -302,19 +449,20 @@ def show_guidance_card(label: str, count: int = 0, GUIDE=None):
     else:
         _guidance_text(info)
     st.markdown('<div class="eco-links">', unsafe_allow_html=True)
-    if info.get("poster"): _guide_link(info["poster"], "Open local poster")
-    _guide_link(info["link"], "Official local guidance (site)")
+    if info.get("poster"):
+        _guide_link(info["poster"], f"📄 Poster (PDF) · {_domain_label(info['poster'])}")
+    _guide_link(info["link"], f"🌐 Official guidance · {_domain_label(info['link'])}")
     st.markdown('</div>', unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
-# ───────────────────────────── Detection helpers ─────────────────────────────
-def run_detection(image_pil: Image.Image, conf, iou, imgsz, tta,
-                  bottle_min=0.2, can_min=0.2, foam_min=0.2, min_area_pct=0.2):
+# ======================= Detection helpers =======================
+def run_detection(image_pil: Image.Image, conf, iou, imgsz, tta, bottle_min, can_min, foam_min, min_area_pct):
     model = GLOBAL_MODEL
     bgr = np.array(image_pil.convert("RGB"))[:, :, ::-1]
     results = model.predict(bgr, conf=conf, iou=iou, imgsz=imgsz, verbose=False, augment=tta)
     pred = results[0]
     if pred.boxes is None or len(pred.boxes) == 0:
+        st.info("No detections")
         return [], {}
     boxes = pred.boxes.xyxy.cpu().numpy()
     scores = pred.boxes.conf.cpu().numpy()
@@ -344,13 +492,29 @@ def run_detection(image_pil: Image.Image, conf, iou, imgsz, tta,
         counts[name] = counts.get(name, 0) + 1
     return dets, counts
 
+# Color levels (no level text in label)
+def _level_for(s: float) -> str:
+    if s >= 0.80: return "High"
+    if s >= 0.60: return "Moderate"
+    if s >= 0.40: return "Low"
+    return "Very Low"
+
+def _level_color(level: str) -> tuple[int,int,int]:
+    return {
+        "High": (35,110,65),
+        "Moderate": (70,150,100),
+        "Low": (130,190,150),
+        "Very Low": (195,225,205),
+    }.get(level, (28,160,78))
+
 def draw_and_show(image_pil: Image.Image, dets):
     bgr = np.array(image_pil.convert("RGB"))[:, :, ::-1]
     out = bgr.copy()
-    color = (28,160,78)
     H, W = out.shape[:2]
     for d in dets:
         x1, y1, x2, y2 = map(int, d["xyxy"])
+        lvl = _level_for(float(d["score"]))          # for color only
+        color = _level_color(lvl)
         cv2.rectangle(out, (x1, y1), (x2, y2), color, 2)
         label = f'{d["class_name"]} {d["score"]:.2f}'
         (tw, th), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
@@ -362,13 +526,13 @@ def draw_and_show(image_pil: Image.Image, dets):
         cv2.putText(out, label, (x_text + 3, y_text - 2), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,255,255), 1, cv2.LINE_AA)
     st.image(Image.fromarray(out[:, :, ::-1]), caption="Detections", use_container_width=True)
 
-# ───────────────────────────── ONE-BOX “Let’s Start Sorting” ─────────────────────────────
-# CSS for header + the container that follows (and a direct container flag selector)
+# ======================= ONE-BOX “Let’s Start Sorting” =======================
+# (Put this where you want the section to appear)
+
+# CSS: style the NEXT sibling container after the header as the section body.
 st.markdown("""
 <style>
-:root{ --boxbg:#D6EEA3; } /* <- box background tint */
-
-/* Header strip */
+/* Header strip (top of the box) */
 .section-cover{
   display:flex; align-items:center; gap:10px;
   padding:14px 18px; margin:14px 0 0;
@@ -385,36 +549,17 @@ st.markdown("""
   padding:4px 10px; border-radius:999px; font-size:.85rem;
 }
 
-/* Preferred: style the specific container via a flag inside it */
-div[data-testid="stVerticalBlock"]:has(.sorting-box-flag){
-  background: var(--boxbg);
-  border:1px solid #c3e48c;
-  border-top:none; border-radius:0 0 22px 22px;
-  padding:16px 18px !important;
-  box-shadow:0 6px 24px rgba(0,0,0,.06);
-}
-
-/* Fallback: if DOM changes, also try “next sibling” approach */
+/* Magic: style the very next Streamlit block after .section-cover.
+   This makes the container look like the same physical box. */
 .section-cover + div:has(> div[data-testid="stVerticalBlock"]){
-  background: var(--boxbg);
-  border:1px solid #c3e48c;
+  background:var(--card,#fff);
+  border:1px solid var(--bd,#E5EFE3);
   border-top:none; border-radius:0 0 22px 22px;
   padding:16px 18px;
   box-shadow:0 6px 24px rgba(0,0,0,.06);
 }
 
-/* Make children look good on tinted background */
-div[data-testid="stVerticalBlock"]:has(.sorting-box-flag) [data-testid="stExpander"] details,
-div[data-testid="stVerticalBlock"]:has(.sorting-box-flag) [data-testid="stExpander"] summary{
-  background: transparent !important;
-  box-shadow: none !important;
-}
-div[data-testid="stVerticalBlock"]:has(.sorting-box-flag) [data-testid="stFileUploaderDropzone"]{
-  background: rgba(255,255,255,.55);
-  border-color: #b1d97b;
-}
-
-/* Utilities */
+/* Minor utilities */
 .citybadge{ display:inline-block; background:var(--pill,#EEF7E9); padding:4px 10px;
             border-radius:999px; border:1px solid var(--bd,#E5EFE3); color:var(--pri2,#4FA25A); }
 ol.howto{ margin:0.2rem 0 0.8rem 1.2rem; }
@@ -428,11 +573,8 @@ ol.howto{ margin:0.2rem 0 0.8rem 1.2rem; }
 </div>
 """, unsafe_allow_html=True)
 
-# Everything below renders INSIDE the styled box
+# Everything below renders inside the styled “same box”
 with st.container():
-    # flag element so CSS can target THIS container
-    st.markdown('<div class="sorting-box-flag"></div>', unsafe_allow_html=True)
-
     # City / Ward row
     c1, c2 = st.columns([2, 6], vertical_alignment="center")
     with c1:
@@ -443,7 +585,7 @@ with st.container():
     city_id = CITY_MAP[city_label]
     GUIDE = GUIDE_BY_CITY.get(city_id, {})
 
-    # Steps list
+    # Steps
     st.markdown("""
     <ol class="howto">
       <li><strong>Select Upload image</strong> or open your <strong>Camera</strong>.</li>
@@ -471,7 +613,7 @@ with st.container():
         if shot:
             image = Image.open(shot).convert("RGB")
 
-    # Advanced settings (recommended defaults)
+    # Advanced settings
     _REC_CONF=0.00; _REC_IOU=0.00; _REC_IMGSZ=200
     _REC_BOTTLE=0.20; _REC_CAN=0.20; _REC_FOAM=0.20; _REC_AREA_PCT=0.20; _REC_TTA=True
 
@@ -505,7 +647,7 @@ with st.container():
     # Status line
     st.caption("Model loaded ✅")
 
-    # Detection flow
+    # Detection flow (uses your existing run_detection/draw_and_show helpers)
     if image is not None:
         st.image(image, caption="Input", use_container_width=True)
         should_run = auto_run or st.button("Run detection")
@@ -527,9 +669,62 @@ with st.container():
             else:
                 st.info("All detections were filtered by thresholds. Try lowering per-class thresholds or min box area.")
 
-# ───────────────────────────── (Optional) Impact & SDGs or other sections ─────────────────────────────
-st.markdown("#### Impact & SDGs")
+# ======================= Impact & SDGs (container) =======================
+st.markdown("<div id='sdgs'></div>", unsafe_allow_html=True)
 st.markdown("""
-- **Carbon credits (what they are):** A carbon credit represents **1 tonne of CO₂ equivalent** reduced or removed.
-- **This app does not issue credits.** Educational CO₂e-avoided estimates are not credits.
-""")
+<div class="section">
+  <div class="section-cover">
+    <div class="eco-emoji">🌏</div>
+    <div class="title">Impact &amp; SDGs</div>
+  </div>
+  <div class="section-body">
+""", unsafe_allow_html=True)
+
+st.markdown("""
+- **Carbon credits (what they are):** A carbon credit represents **1 tonne of CO₂ equivalent** reduced or removed. Credits exist only when a **registered project** follows an **approved methodology** and passes **MRV**. They are then **issued on a registry** such as Gold Standard, Verra, or Japan’s J-Credit.
+- **This app does not issue credits.** It helps people sort properly. Educational CO₂e-avoided estimates are okay, but they are **not credits**.
+""", unsafe_allow_html=True)
+
+st.markdown(
+    f"""
+<div class="eco-links">
+  <a class="eco-link" href="{LINK_UN_CNP}"  target="_blank" rel="noopener">UN Carbon Offset Platform</a>
+  <a class="eco-link" href="{LINK_UN_CNP2}" target="_blank" rel="noopener">Climate Neutral Now</a>
+  <a class="eco-link" href="{LINK_WB_MRV}"  target="_blank" rel="noopener">World Bank: MRV</a>
+  <a class="eco-link" href="{LINK_GS}"      target="_blank" rel="noopener">Gold Standard</a>
+  <a class="eco-link" href="{LINK_VERRA}"   target="_blank" rel="noopener">Verra VCS</a>
+  <a class="eco-link" href="{LINK_JCREDIT}" target="_blank" rel="noopener">Japan J-Credit</a>
+</div>
+""", unsafe_allow_html=True)
+
+# SDG tiles (caption optional; hide SDG11 text)
+col1, col2, col3 = st.columns(3)
+def sdg_tile(col, path, label=None):
+    with col:
+        if os.path.exists(path):
+            st.image(path, width=120)
+        else:
+            st.warning(f"Missing {path}")
+        if label:
+            st.markdown(f"<div class='sdg-caption'>{label}</div>", unsafe_allow_html=True)
+
+sdg_tile(col1, "sdg12.png", None)
+sdg_tile(col2, "sdg11.png", None)  # no caption text
+sdg_tile(col3, "sdg13.png", None)
+
+st.markdown("</div></div>", unsafe_allow_html=True)
+
+# ======================= About us (container, below SDGs) =======================
+st.markdown("<div id='about'></div>", unsafe_allow_html=True)
+st.markdown("""
+<div class="section">
+  <div class="section-cover">
+    <div class="eco-emoji">👋</div>
+    <div class="title">About us</div>
+  </div>
+  <div class="section-body">
+    <p>“When AI Sees Litter” is a community project that helps people sort waste correctly using computer vision and local rules.
+    Shibuya is the first city we support. More cities are on the way.</p>
+  </div>
+</div>
+""", unsafe_allow_html=True)
