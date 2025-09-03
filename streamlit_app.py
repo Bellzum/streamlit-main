@@ -706,7 +706,8 @@ st.markdown("""
 ol.howto{ margin:0.2rem 0 0.8rem 1.2rem; }
 </style>
 
-<div id="features"></div> <!-- was id="features" -->
+st.markdown("""
+<div id="sdgs"></div>   <!-- was id="features" -->
 <div class="section-cover">
   <div class="eco-emoji">🌏</div>
   <div class="title">Impact&amp;SDGs</div>
