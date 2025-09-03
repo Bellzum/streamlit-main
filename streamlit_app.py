@@ -526,37 +526,63 @@ def draw_and_show(image_pil: Image.Image, dets):
         cv2.putText(out, label, (x_text + 3, y_text - 2), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,255,255), 1, cv2.LINE_AA)
     st.image(Image.fromarray(out[:, :, ::-1]), caption="Detections", use_container_width=True)
 
-# ======================= ONE-BOX “Let’s Start Sorting” =======================
-# (Put this where you want the section to appear)
 
-# CSS: style the NEXT sibling container after the header as the section body.
+# ======================= ONE-BOX “Let’s Start Sorting” =======================
+
+# CSS for the header strip + the very next Streamlit container (same visual box)
 st.markdown("""
 <style>
-:root{ --boxbg:#D6EEA3; }
+:root{ --boxbg:#D6EEA3; }  /* <- change this if you want a different tint */
 
-/* Make the single container under the header look like the same box, with a green tint */
-.section-cover + div:has(> div[data-testid="stVerticalBlock"]){
-  background: var(--boxbg);
-  border: 1px solid #c3e48c;  /* softer green border */
-  border-top: none;
-  border-radius: 0 0 22px 22px;
-  padding: 16px 18px;
-  box-shadow: 0 6px 24px rgba(0,0,0,.06);
+/* Header strip */
+.section-cover{
+  display:flex; align-items:center; gap:10px;
+  padding:14px 18px; margin:14px 0 0;
+  background:linear-gradient(90deg, var(--pri2,#4FA25A), var(--pri,#79C16D));
+  color:#fff; border:1px solid var(--bd,#E5EFE3);
+  border-radius:22px 22px 0 0;
+  box-shadow:0 6px 24px rgba(0,0,0,.06);
+}
+.section-cover .eco-emoji{font-size:1.2rem;}
+.section-cover .title{font-weight:900; font-size:1.08rem; letter-spacing:-.01em;}
+.section-cover .badge{
+  margin-left:auto; background:rgba(255,255,255,.18);
+  border:1px solid rgba(255,255,255,.28);
+  padding:4px 10px; border-radius:999px; font-size:.85rem;
 }
 
-/* Keep expanders transparent so the box color shows through */
-.section-cover + div:has(> div[data-testid="stVerticalBlock"]) [data-testid="stExpander"] details,
-.section-cover + div:has(> div[data-testid="stVerticalBlock"]) [data-testid="stExpander"] summary{
+/* Style the very next Streamlit block after .section-cover as the same box */
+.section-cover + div:has(> div[data-testid="stVerticalBlock"]){
+  background: var(--boxbg);
+  border:1px solid #c3e48c;
+  border-top:none; border-radius:0 0 22px 22px;
+  padding:16px 18px;
+  box-shadow:0 6px 24px rgba(0,0,0,.06);
+}
+
+/* Keep children looking nice on the tinted box */
+.section-cover + div [data-testid="stExpander"] details,
+.section-cover + div [data-testid="stExpander"] summary{
   background: transparent !important;
   box-shadow: none !important;
 }
-
-/* So the upload dropzone feels nice on the green */
-.section-cover + div:has(> div[data-testid="stVerticalBlock"]) [data-testid="stFileUploaderDropzone"]{
+.section-cover + div [data-testid="stFileUploaderDropzone"]{
   background: rgba(255,255,255,.55);
   border-color: #b1d97b;
 }
+
+/* Small utilities */
+.citybadge{ display:inline-block; background:var(--pill,#EEF7E9); padding:4px 10px;
+            border-radius:999px; border:1px solid var(--bd,#E5EFE3); color:var(--pri2,#4FA25A); }
+ol.howto{ margin:0.2rem 0 0.8rem 1.2rem; }
 </style>
+
+<div id="features"></div>
+<div class="section-cover">
+  <div class="eco-emoji">🧭</div>
+  <div class="title">Let’s Start Sorting</div>
+  <div class="badge">App features</div>
+</div>
 """, unsafe_allow_html=True)
 
 # Everything below renders inside the styled “same box”
@@ -582,7 +608,8 @@ with st.container():
 
     # Inputs
     src = st.radio("Input source", ["Upload image", "Camera"], index=0, horizontal=True)
-    auto_run = st.toggle("Auto-run detection", value=True, help="Run detection automatically after you choose or take a photo.")
+    auto_run = st.toggle("Auto-run detection", value=True,
+                         help="Run detection automatically after you choose or take a photo.")
 
     image = None
     if src == "Upload image":
@@ -628,12 +655,13 @@ with st.container():
         foam_min     = c3a.slider("Min conf: Styrofoam", 0.0, 1.0, float(foam_min),     0.01)
         min_area_pct = c4a.slider("Min box area (%)",    0.0, 5.0,  float(min_area_pct), 0.1,
                                   help="Ignore tiny boxes by percent of image area.")
-        tta = st.toggle("Test time augmentation", value=tta, help="Slower. Sometimes reduces false positives.")
+        tta = st.toggle("Test time augmentation", value=tta,
+                        help="Slower. Sometimes reduces false positives.")
 
     # Status line
     st.caption("Model loaded ✅")
 
-    # Detection flow (uses your existing run_detection/draw_and_show helpers)
+    # Detection flow
     if image is not None:
         st.image(image, caption="Input", use_container_width=True)
         should_run = auto_run or st.button("Run detection")
@@ -654,6 +682,7 @@ with st.container():
                     st.caption("No local guidance to show for these detections.")
             else:
                 st.info("All detections were filtered by thresholds. Try lowering per-class thresholds or min box area.")
+
 
 # ======================= Impact & SDGs (container) =======================
 st.markdown("<div id='sdgs'></div>", unsafe_allow_html=True)
