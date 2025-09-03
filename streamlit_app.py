@@ -94,7 +94,7 @@ html{scroll-behavior:smooth;}
   <div class="links">
     <a href="#features">App features</a>
     <a href="#try">Impact &amp; SDGs</a>
-    <a href="#about">About</a>
+    <a href="#about">About us</a>
   </div>
 </div>
 """, unsafe_allow_html=True)
@@ -112,11 +112,11 @@ st.markdown(f"""
       <div class="rule"></div>
       <div class="chips">
         <span class="chip">Recycling</span><span class="chip">Disposal guide</span>
-        <span class="chip">AI</span><span class="chip">Japan</span>
+        <span class="chip">AI</span>
       </div>
       <a class="cta" href="#try">Start now</a>
     </div>
-    <div class="photo"><img src="{hero_img}" alt="hero"/></div>
+    <div class="photo"><div class="circle"><img src="{hero_img}" alt="hero"/></div></div>
   </div>
 </div>
 """, unsafe_allow_html=True)
@@ -125,9 +125,9 @@ st.markdown("<div id='features'></div>", unsafe_allow_html=True)
 st.markdown("""
 <div class="cards">
   <div class="card"><h3>Works on your phone or laptop</h3><p>Point the camera or upload a photo. See what it is and what to do in seconds.</p></div>
-  <div class="card"><h3>Guidance for your city</h3><p>We follow local rules & posters to show how to sort PET bottles, cans, and foam.</p></div>
-  <div class="card"><h3>Simple, friendly design</h3><p>Rounded hero, chips, and a clear CTA — like PlantNet.</p></div>
-</div>
+  <div class="card"><h3>Guidance for your city</h3><p>We follow your local rules and posters to show how to sort PET bottles, cans, and foam.</p></div>
+  <div class="card"><h3>Simple, friendly design</h3><p>Big buttons and clear steps help anyone use the app with confidence.</p></div>
+  </div>
 """, unsafe_allow_html=True)
 
 st.markdown("<div id='try'></div>", unsafe_allow_html=True)
