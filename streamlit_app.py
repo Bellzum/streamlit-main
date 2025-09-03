@@ -13,113 +13,161 @@ import cv2
 
 st.set_page_config(page_title="When AI Sees Litter · Shibuya", page_icon="♻️", layout="wide")
 
-# ======================= THEME (eco UI + PlantNet-like hero) =======================
+# ======================= Helpers =======================
+def data_url(path: str, fallback: str | None = None) -> str:
+    """Return a data: URL for a local image if it exists, else the fallback URL (or empty string)."""
+    try:
+        if path and os.path.exists(path):
+            with open(path, "rb") as f:
+                b64 = base64.b64encode(f.read()).decode("ascii")
+            ext = (os.path.splitext(path)[1].lstrip(".") or "png").lower()
+            return f"data:image/{ext};base64,{b64}"
+    except Exception:
+        pass
+    return fallback or ""
+
+def _domain_label(url: str) -> str:
+    try:
+        return urlparse(url).netloc.replace("www.", "")
+    except Exception:
+        return "link"
+
+# ======================= THEME (eco UI + PlantNet-like hero + section covers) =======================
 def apply_theme():
-    st.markdown("""
+    nav_logo = data_url("logo.png", None)  # None -> hide if missing
+    nav_brand_img = f'<img class="brand-logo" src="{nav_logo}" alt="logo"/>' if nav_logo else ""
+
+    st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;700;900&display=swap');
 
-    :root{
+    :root{{
       /* brand */
       --pri:#79C16D; --pri2:#4FA25A; --hi:#CFEAC0; --bg:#FAFEF6; --card:#FFFFFF;
       --txt:#0F2A1C; --mut:#6F8B7A; --pill:#EEF7E9; --bd:#E5EFE3;
       /* hero */
       --bg2:#f5f7f2; --hero:#6f8f2b; --hero2:#6b8a2c;
-    }
-    html, body, [data-testid="stAppViewContainer"]{
+    }}
+    html, body, [data-testid="stAppViewContainer"]{{
       background:var(--bg2); color:var(--txt); font-family:'Poppins',ui-sans-serif;
-    }
-    .main .block-container{ padding-top:0.6rem !important; max-width:1120px; }
+    }}
+    .main .block-container{{ padding-top:0.6rem !important; max-width:1120px; }}
+    html{{ scroll-behavior:smooth; }}
 
     /* --- navbar --- */
-    .nav{
+    .nav{{
       position:sticky; top:0; z-index:50; display:flex; align-items:center; justify-content:space-between;
       padding:14px 8px; background:rgba(245,247,242,.9);
       -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
       border-bottom:1px solid var(--bd);
-    }
-    .brand{ font-weight:900; letter-spacing:-.02em; }
-    .links{ display:flex; gap:18px; font-weight:700; }
-    .links a{ color:inherit !important; text-decoration:none; }
-    .links a:hover{ text-decoration:underline; }
-    html{ scroll-behavior:smooth; }
+    }}
+    .brand{{ display:flex; align-items:center; gap:10px; font-weight:900; letter-spacing:-.02em; }}
+    .brand-logo{{
+      height:22px; width:22px; object-fit:contain; border-radius:6px; background:#fff; padding:2px;
+      box-shadow:0 0 0 1px rgba(0,0,0,.06) inset;
+    }}
+    .links{{ display:flex; gap:18px; font-weight:700; }}
+    .links a{{ color:inherit !important; text-decoration:none; }}
+    .links a:hover{{ text-decoration:underline; }}
 
     /* --- hero --- */
-    .hero{
+    .hero{{
       margin:16px 0 24px; padding:28px; border-radius:28px; color:#fff;
       background:linear-gradient(180deg,var(--hero),var(--hero2));
       box-shadow:0 20px 60px rgba(70,90,30,.22);
-    }
-    .hero-grid{ display:grid; grid-template-columns:1.25fr 1fr; gap:24px; align-items:center; }
-    .hero h1{ font-size:clamp(28px,5vw,62px); line-height:1.05; margin:0 0 8px; font-weight:900; }
-    .sub{ opacity:.95; font-size:clamp(14px,1.1vw,18px); max-width:560px; }
-    .rule{ height:1px; background:rgba(255,255,255,.28); margin:14px 0; }
-    .chips{ display:flex; gap:8px; flex-wrap:wrap; }
-    .chip{ background:rgba(255,255,255,.16); border:1px solid rgba(255,255,255,.28);
-           padding:6px 10px; border-radius:999px; font-weight:700; }
-    .cta{ display:inline-block; margin-top:16px; padding:12px 18px; border-radius:999px; font-weight:900;
-          background:#0e0e0e; color:#fff !important; text-decoration:none; box-shadow:0 10px 24px rgba(0,0,0,.25); }
+    }}
+    .hero-grid{{ display:grid; grid-template-columns:1.25fr 1fr; gap:24px; align-items:center; }}
+    .hero h1{{ font-size:clamp(28px,5vw,62px); line-height:1.05; margin:0 0 8px; font-weight:900; }}
+    .sub{{ opacity:.95; font-size:clamp(14px,1.1vw,18px); max-width:560px; }}
+    .rule{{ height:1px; background:rgba(255,255,255,.28); margin:14px 0; }}
+    .chips{{ display:flex; gap:8px; flex-wrap:wrap; }}
+    .chip{{ background:rgba(255,255,255,.16); border:1px solid rgba(255,255,255,.28);
+           padding:6px 10px; border-radius:999px; font-weight:700; }}
+    .cta{{ display:inline-block; margin-top:16px; padding:12px 18px; border-radius:999px; font-weight:900;
+          background:#0e0e0e; color:#fff !important; text-decoration:none; box-shadow:0 10px 24px rgba(0,0,0,.25); }}
 
     /* hero photo: white circle for transparent logos */
-    .photo{ position:relative; height:320px; }
-    .photo .circle{
+    .photo{{ position:relative; height:320px; }}
+    .photo .circle{{
       position:absolute; right:-6%; top:0; height:100%; aspect-ratio:1/1;
       background:#fff !important; border-radius:50%;
       border:10px solid #fff; box-shadow:0 10px 50px rgba(0,0,0,.35);
       display:flex; align-items:center; justify-content:center; overflow:hidden;
-    }
-    .photo .circle img{
-      width:86%; height:86%; object-fit:contain; background:#fff !important; border:none;
-    }
-    @media (max-width: 900px){
-      .hero-grid{ grid-template-columns:1fr; }
-      .photo{ height:220px; }
-      .photo .circle{ right:auto; left:50%; transform:translateX(-50%); }
-    }
+    }}
+    .photo .circle img{{ width:86%; height:86%; object-fit:contain; background:#fff !important; border:none; }}
+    @media (max-width: 900px){{
+      .hero-grid{{ grid-template-columns:1fr; }}
+      .photo{{ height:220px; }}
+      .photo .circle{{ right:auto; left:50%; transform:translateX(-50%); }}
+    }}
 
-    /* --- eco UI from your original app --- */
-    .pill{ display:inline-block; background:var(--pill); padding:2px 10px 4px 10px;
-           border-radius:999px; color:var(--pri2); border:1px solid var(--bd); }
-    .eco-links{ display:flex; gap:10px; margin-top:10px; margin-bottom:22px; flex-wrap:wrap; }
-    .eco-link{ border-radius:999px; padding:8px 12px; border:1px solid var(--bd);
-               background:#fff; text-decoration:none !important; color:var(--pri2) !important; font-weight:700; }
-    .eco-link:hover{ background:var(--pill); }
-    .citybadge{ display:inline-block; background:var(--pill); padding:4px 10px;
-                border-radius:999px; border:1px solid var(--bd); color:var(--pri2); }
-    .badge-align{ margin-top:28px; } @media (max-width:640px){ .badge-align{ margin-top:8px; } }
+    /* ===== Section container covers ===== */
+    .section{{
+      background:var(--card);
+      border:1px solid var(--bd);
+      border-radius:22px;
+      overflow:hidden;
+      box-shadow:0 6px 24px rgba(0,0,0,.06);
+      margin:14px 0 28px;
+    }}
+    .section-cover{{
+      display:flex; align-items:center; gap:10px;
+      padding:14px 18px;
+      background:linear-gradient(90deg, var(--pri2), var(--pri));
+      color:#fff;
+    }}
+    .section-cover .eco-emoji{{ font-size:1.2rem; }}
+    .section-cover .title{{ font-weight:900; font-size:1.08rem; letter-spacing:-.01em; }}
+    .section-cover .badge{{
+      margin-left:auto; background:rgba(255,255,255,.18);
+      border:1px solid rgba(255,255,255,.28);
+      padding:4px 10px; border-radius:999px; font-size:.85rem;
+    }}
+    .section-body{{ padding:16px 18px; }}
 
-    .eco-card{ background:#fff; border:none; border-radius:22px; padding:18px 16px;
-               margin:10px 0 18px 0; box-shadow:0 3px 16px rgba(0,0,0,.04); }
-    .eco-head{ display:flex; align-items:center; gap:10px; margin-bottom:6px; }
-    .eco-emoji{ font-size:1.5rem; }
-    .eco-title{ font-weight:900; font-size:1.28rem; }
-    .eco-badge{ margin-left:auto; background:var(--pill); color:var(--pri2);
-                border:1px solid var(--bd); border-radius:999px; padding:4px 10px; font-size:.85rem; }
+    /* --- eco UI from original app --- */
+    .pill{{ display:inline-block; background:var(--pill); padding:2px 10px 4px 10px;
+           border-radius:999px; color:var(--pri2); border:1px solid var(--bd); }}
+    .eco-links{{ display:flex; gap:10px; margin-top:10px; margin-bottom:22px; flex-wrap:wrap; }}
+    .eco-link{{ border-radius:999px; padding:8px 12px; border:1px solid var(--bd);
+               background:#fff; text-decoration:none !important; color:var(--pri2) !important; font-weight:700; }}
+    .eco-link:hover{{ background:var(--pill); }}
+    .citybadge{{ display:inline-block; background:var(--pill); padding:4px 10px;
+                border-radius:999px; border:1px solid var(--bd); color:var(--pri2); }}
+    .badge-align{{ margin-top:28px; }} @media (max-width:640px){{ .badge-align{{ margin-top:8px; }} }}
 
-    .eco-section-title-primary{ font-weight:900; font-size:1.12rem; color:var(--pri2); margin:8px 0 6px 0; }
-    .eco-section-title{ font-weight:800; margin:8px 0 4px 0; }
-    .eco-list{ margin:0 0 4px 0; padding-left:18px; }
-    .eco-list li{ margin:2px 0; }
-    .chip-row{ display:flex; flex-wrap:wrap; gap:8px; margin:6px 0 2px 0; }
-    .chip{ background:var(--pill); color:var(--pri2); border:1px solid var(--bd);
-           border-radius:999px; padding:4px 10px; font-size:.88rem; }
+    .eco-card{{ background:#fff; border:none; border-radius:22px; padding:18px 16px;
+               margin:10px 0 18px 0; box-shadow:0 3px 16px rgba(0,0,0,.04); }}
+    .eco-head{{ display:flex; align-items:center; gap:10px; margin-bottom:6px; }}
+    .eco-emoji{{ font-size:1.5rem; }}
+    .eco-title{{ font-weight:900; font-size:1.28rem; }}
+    .eco-badge{{ margin-left:auto; background:var(--pill); color:var(--pri2);
+                border:1px solid var(--bd); border-radius:999px; padding:4px 10px; font-size:.85rem; }}
 
-    .sdg-caption{ text-align:center; font-weight:800; margin-top:10px; }
+    .eco-section-title-primary{{ font-weight:900; font-size:1.12rem; color:var(--pri2); margin:8px 0 6px 0; }}
+    .eco-section-title{{ font-weight:800; margin:8px 0 4px 0; }}
+    .eco-list{{ margin:0 0 4px 0; padding-left:18px; }}
+    .eco-list li{{ margin:2px 0; }}
+    .chip-row{{ display:flex; flex-wrap:wrap; gap:8px; margin:6px 0 2px 0; }}
+    .chip{{ background:var(--pill); color:var(--pri2); border:1px solid var(--bd);
+           border-radius:999px; padding:4px 10px; font-size:.88rem; }}
+
+    .sdg-caption{{ text-align:center; font-weight:800; margin-top:10px; }}
 
     /* remove default separators */
-    [data-testid="stDivider"], hr, [role="separator"]{ display:none !important; }
-    [data-testid="stExpander"] details, [data-testid="stExpander"] summary{
+    [data-testid="stDivider"], hr, [role="separator"]{{ display:none !important; }}
+    [data-testid="stExpander"] details, [data-testid="stExpander"] summary{{
       border:none !important; box-shadow:none !important; background:transparent !important;
-    }
-    [data-testid="stHorizontalBlock"], [data-testid="stVerticalBlock"]{
+    }}
+    [data-testid="stHorizontalBlock"], [data-testid="stVerticalBlock"]{{
       border:none !important; box-shadow:none !important; background:transparent !important;
-    }
-    [data-testid="stHeader"]{ background:transparent !important; }
-    [data-testid="stHeader"] div{ border:none !important; box-shadow:none !important; }
+    }}
+    [data-testid="stHeader"]{{ background:transparent !important; }}
+    [data-testid="stHeader"] div{{ border:none !important; box-shadow:none !important; }}
     </style>
 
     <div class="nav">
-      <div class="brand">When AI Sees Litter</div>
+      <div class="brand">{nav_brand_img}<span>When AI Sees Litter</span></div>
       <div class="links">
         <a href="#features">App features</a>
         <a href="#sdgs">Impact &amp; SDGs</a>
@@ -127,20 +175,14 @@ def apply_theme():
       </div>
     </div>
     """, unsafe_allow_html=True)
+
 apply_theme()
 
 # ======================= Hero block =======================
-def data_url(path: str, fallback: str) -> str:
-    if path and os.path.exists(path):
-        with open(path, "rb") as f:
-            b64 = base64.b64encode(f.read()).decode("ascii")
-        ext = os.path.splitext(path)[1].lstrip(".").lower() or "png"
-        return f"data:image/{ext};base64,{b64}"
-    return fallback
-
-hero_img = data_url("logo.png",
-                    "https://images.unsplash.com/photo-1501004318641-b39e6451bec6?q=80&w=1080&auto=format&fit=crop")
-
+hero_img = data_url(
+    "logo.png",
+    "https://images.unsplash.com/photo-1501004318641-b39e6451bec6?q=80&w=1080&auto=format&fit=crop"
+)
 st.markdown(f"""
 <div class="hero">
   <div class="hero-grid">
@@ -332,19 +374,7 @@ def load_model():
 
 GLOBAL_MODEL = load_model()
 
-# ======================= Utils =======================
-def _get_names_map(pred, model):
-    if FORCE_CLASS_NAMES:
-        return {i: n for i, n in enumerate(TARGET_NAMES)}
-    if hasattr(pred, "names") and isinstance(pred.names, dict):  return pred.names
-    if hasattr(model, "names") and isinstance(model.names, dict): return model.names
-    if hasattr(model, "names") and isinstance(model.names, list): return {i:n for i,n in enumerate(model.names)}
-    return {0:"Clear plastic bottle", 1:"Drink can", 2:"Styrofoam piece"}
-
-def _domain_label(url: str) -> str:
-    try: return urlparse(url).netloc.replace("www.","")
-    except Exception: return "link"
-
+# ======================= Guidance rendering helpers =======================
 def _guide_link(url: str, label: str):
     st.markdown(f'<a class="eco-link" href="{url}" target="_blank" rel="noopener">{label}</a>', unsafe_allow_html=True)
 
@@ -416,9 +446,17 @@ def show_guidance_card(label: str, count: int = 0, GUIDE=None):
     st.markdown('</div>', unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
-# ======================= Anchored "App features" section =======================
+# ======================= Anchored "App features" section (container cover) =======================
 st.markdown("<div id='features'></div>", unsafe_allow_html=True)
-st.markdown("### Let’s Start Sorting!")
+st.markdown("""
+<div class="section">
+  <div class="section-cover">
+    <div class="eco-emoji">🧭</div>
+    <div class="title">Let’s Start Sorting</div>
+    <div class="badge">App features</div>
+  </div>
+  <div class="section-body">
+""", unsafe_allow_html=True)
 
 # City / Ward
 c1, c2 = st.columns([2, 6])
@@ -426,6 +464,7 @@ with c1:
     city_label = st.selectbox("City / Ward", ["Shibuya (Tokyo)"], index=0)
 with c2:
     st.markdown("<div class='citybadge badge-align'>More cities coming soon</div>", unsafe_allow_html=True)
+
 city_id = CITY_MAP[city_label]
 GUIDE = GUIDE_BY_CITY.get(city_id, {})
 
@@ -500,8 +539,8 @@ def run_detection(image_pil: Image.Image):
     names_map = {i:n for i,n in enumerate(TARGET_NAMES)} if FORCE_CLASS_NAMES else _get_names_map(pred, model)
     per_class_min = {
         "Clear plastic bottle": bottle_min,
-        "Drink can":           can_min,
-        "Styrofoam piece":     foam_min,
+        "Drink can":            can_min,
+        "Styrofoam piece":      foam_min,
     }
 
     H, W = bgr.shape[:2]
@@ -573,13 +612,25 @@ if image is not None:
         else:
             st.info("All detections were filtered by thresholds. Try lowering per class thresholds or min box area.")
 
-# ======================= Impact & SDGs (anchor) =======================
+# Close "App features" section
+st.markdown("</div></div>", unsafe_allow_html=True)
+
+# ======================= Impact & SDGs (container) =======================
 st.markdown("<div id='sdgs'></div>", unsafe_allow_html=True)
-st.markdown("#### Impact & SDGs")
+st.markdown("""
+<div class="section">
+  <div class="section-cover">
+    <div class="eco-emoji">🌏</div>
+    <div class="title">Impact &amp; SDGs</div>
+  </div>
+  <div class="section-body">
+""", unsafe_allow_html=True)
+
 st.markdown("""
 - **Carbon credits (what they are):** A carbon credit represents **1 tonne of CO₂ equivalent** reduced or removed. Credits exist only when a **registered project** follows an **approved methodology** and passes **MRV**. They are then **issued on a registry** such as Gold Standard, Verra, or Japan’s J-Credit.
 - **This app does not issue credits.** It helps people sort properly. Educational CO₂e-avoided estimates are okay, but they are **not credits**.
 """, unsafe_allow_html=True)
+
 st.markdown(
     f"""
 <div class="eco-links">
@@ -607,15 +658,19 @@ sdg_tile(col1, "sdg12.png", "12 Responsible Consumption and Production")
 sdg_tile(col2, "sdg11.png", None)  # no caption text
 sdg_tile(col3, "sdg13.png", "13 Climate Action")
 
-# ======================= About us (anchor *below* SDG images) =======================
+st.markdown("</div></div>", unsafe_allow_html=True)
+
+# ======================= About us (container, below SDGs) =======================
 st.markdown("<div id='about'></div>", unsafe_allow_html=True)
 st.markdown("""
-<div class="eco-card">
-  <div class="eco-head">
+<div class="section">
+  <div class="section-cover">
     <div class="eco-emoji">👋</div>
-    <div class="eco-title">About us</div>
+    <div class="title">About us</div>
   </div>
-  <p>“When AI Sees Litter” is a community project that helps people sort waste correctly using computer vision and local rules.
-  Shibuya is the first city we support. More cities are on the way.</p>
+  <div class="section-body">
+    <p>“When AI Sees Litter” is a community project that helps people sort waste correctly using computer vision and local rules.
+    Shibuya is the first city we support. More cities are on the way.</p>
+  </div>
 </div>
 """, unsafe_allow_html=True)
