@@ -768,27 +768,26 @@ with st.container():
 
     # Member cards CSS
     st.markdown("""
-    <div class="member-grid">
+     <style>
+    .member-grid{
+      display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:16px; margin-top:10px;
+    }
+    @media (max-width: 900px){ .member-grid{ grid-template-columns:repeat(2,1fr); } }
+    @media (max-width: 600px){ .member-grid{ grid-template-columns:1fr; } }
 
-    <!-- your two member-card blocks start -->
-    <div class="member-card">
-        <img class="member-photo" src="data:image/jpeg;base64, ...your long base64 for Lalida..." alt="Lalida">
-        <div>
-        <div class="member-name">Lalida</div>
-        <div class="member-bio">I run hair salons — I make people beautiful, and I want the world around us beautiful too.</div>
-        </div>
-    </div>
-
-    <div class="member-card">
-        <img class="member-photo" src="data:image/png;base64, ...your long base64 for Hadrien..." alt="Hadrien">
-        <div>
-        <div class="member-name">Hadrien</div>
-        <div class="member-bio">I support model training and product polish.</div>
-        </div>
-    </div>
-    <!-- your two member-card blocks end -->
-
-    </div>
+    .member-card{
+      display:flex; align-items:flex-start; gap:12px;
+      background:var(--card,#fff); border:1px solid var(--bd,#E5EFE3);
+      border-radius:16px; padding:12px 14px; box-shadow:0 3px 16px rgba(0,0,0,.04);
+    }
+    .member-photo{
+      width:56px; height:56px; border-radius:50%; object-fit:cover; flex-shrink:0;
+      background:#fff; border:2px solid #fff; box-shadow:0 0 0 2px var(--pill,#EEF7E9);
+    }
+    .member-name{ font-weight:900; }
+    .member-role{ font-size:.9rem; color:var(--mut,#6F8B7A); margin-top:2px; }
+    .member-bio{ font-size:.92rem; line-height:1.35; margin-top:4px; }
+    </style>
     """, unsafe_allow_html=True)
     
     # Helper for avatar with fallback
