@@ -158,7 +158,7 @@ GUIDE_SHIBUYA = {
             {"text": "Hanwa explains used aluminum cans are cleaned, melted and supplied as remelt scrap ingots then used again as cans.",
              "url": HANWA_CAN2CAN},
         ],
-        "images": [HANWA_CAN2CAN, CCBJI_CAN2CAN],
+        "images": [HANWA_CAN2CAN],
         "icons": [ICON_AL, ICON_STEEL],
         "link": SHIBUYA_GUIDE_URL,
         "poster": SHIBUYA_POSTER_EN,
@@ -371,7 +371,7 @@ else:
     if shot: image = Image.open(shot).convert("RGB")
 
 # ======================= Advanced settings (below inputs) =======================
-_REC_CONF=0.00; _REC_IOU=0.00; _REC_IMGSZ=200
+_REC_CONF=0.00; _REC_IOU=0.00; _REC_IMGSZ=416
 _REC_BOTTLE=0.20; _REC_CAN=0.20; _REC_FOAM=0.20; _REC_AREA_PCT=0.20; _REC_TTA=True
 
 conf=_REC_CONF; iou=_REC_IOU; imgsz=_REC_IMGSZ
@@ -387,7 +387,7 @@ with st.expander("Advanced settings (optional)"):
         conf=_REC_CONF; iou=_REC_IOU; imgsz=_REC_IMGSZ
         bottle_min=_REC_BOTTLE; can_min=_REC_CAN; foam_min=_REC_FOAM; min_area_pct=_REC_AREA_PCT; tta=_REC_TTA
     elif preset == "Strict":
-        conf=0.35; iou=0.50; imgsz=640
+        conf=0.35; iou=0.50; imgsz=416
         bottle_min=0.70; can_min=0.70; foam_min=0.75; min_area_pct=0.5; tta=False
 
     conf = st.slider("Base confidence", 0.0, 0.95, float(conf), 0.01)
@@ -442,9 +442,9 @@ def run_detection(image_pil: Image.Image):
 
 # level colors (BGR): darker for higher level
 def _level_for(s: float) -> str:
-    if s >= 0.80: return "High"
-    if s >= 0.60: return "Moderate"
-    if s >= 0.40: return "Low"
+    if s >= 0.80: return ""
+    if s >= 0.60: return ""
+    if s >= 0.40: return ""
     return "Very Low"
 def _level_color(level: str) -> tuple[int,int,int]:
     return {"High":(35,110,65),"Moderate":(70,150,100),"Low":(130,190,150),"Very Low":(195,225,205)}.get(level,(28,160,78))
@@ -506,15 +506,17 @@ st.markdown(
 """, unsafe_allow_html=True)
 
 # SDG tiles
-col1, col2, col3 = st.columns(3)
+col1, col2, col3, col4 = st.columns(4)
 def sdg_tile(col, path, label):
     with col:
         if os.path.exists(path):
             st.image(path, width=180)
         else:
             st.warning(f"Missing {path}")
-        st.markdown(f"<div class='sdg-caption'>{label}</div>", unsafe_allow_html=True)
+        if label:  # only render when provided
+            st.markdown(f"<div class='sdg-caption'>{label}</div>", unsafe_allow_html=True)
 
-sdg_tile(col2, "sdg11.png", "11 Sustainable Cities and Communities")
-sdg_tile(col1, "sdg12.png", "12 Responsible Consumption and Production")
-sdg_tile(col3, "sdg13.png", "13 Climate Action")
+sdg_tile(col1, "sdg_logo.jpg", None)
+sdg_tile(col3, "sdg11.png", None)
+sdg_tile(col2, "sdg12.png", None)
+sdg_tile(col4, "sdg13.png", None)
