@@ -13,37 +13,48 @@ from urllib.parse import urlparse
 st.set_page_config(page_title="When AI Sees Litter · Shibuya", page_icon="♻️", layout="wide")
 
 # ======================= THEME (light; no section borders/lines) =======================
-import streamlit as st, base64, os
-st.set_page_config(page_title="Green Sort", page_icon="🌿", layout="wide")
+# --- PlantNet-style navbar + hero (drop-in) ---
+import base64  # only add base64; you already imported os, streamlit, etc.
 
-def data_url(path, fallback):
-    if os.path.exists(path):
-        b64 = base64.b64encode(open(path,"rb").read()).decode()
-        ext = os.path.splitext(path)[1].lstrip(".") or "png"
-        return f"data:image/{ext};base64,{b64}"
-    return fallback
+def data_url(path: str, fallback: str | None = None) -> str:
+    """Return data: URL for local image if it exists, else fallback URL (if any)."""
+    try:
+        if path and os.path.exists(path):
+            with open(path, "rb") as f:
+                b64 = base64.b64encode(f.read()).decode("ascii")
+            ext = os.path.splitext(path)[1].lstrip(".").lower() or "png"
+            return f"data:image/{ext};base64,{b64}"
+    except Exception:
+        pass
+    return fallback or ""
 
-# ---------- PlantNet-style navbar + hero ----------
+# Inject hero/nav CSS (kept separate from your app theme)
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;700;900&display=swap');
+
 :root{
   --bg:#f5f7f2; --card:#ffffff; --ink:#0f2a1c; --mut:#6f8b7a; --pri:#6f8f2b;
   --pri2:#86a93a; --bd:#e5efe3; --hero:#6f8f2b; --hero2:#6b8a2c;
 }
-html,body,[data-testid="stAppViewContainer"]{background:var(--bg);color:var(--ink);font-family:'Poppins',ui-sans-serif;}
-.main .block-container{max-width:1120px;padding-top:0.6rem;}
+html,body,[data-testid="stAppViewContainer"]{
+  background:var(--bg); color:var(--ink); font-family:'Poppins',ui-sans-serif;
+}
+.main .block-container{max-width:1120px; padding-top:0.6rem;}
 
+/* NAV */
 .nav{
   position:sticky; top:0; z-index:50; display:flex; align-items:center; justify-content:space-between;
-  padding:14px 8px; background:color-mix(in oklab, var(--bg) 80%, white 20%);
-  backdrop-filter: blur(8px); border-bottom:1px solid var(--bd);
+  padding:14px 8px; background:rgba(245,247,242,.9);
+  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+  border-bottom:1px solid var(--bd);
 }
 .brand{font-weight:900; letter-spacing:-.02em;}
 .links{display:flex; gap:18px; font-weight:700;}
 .links a{color:inherit !important; text-decoration:none;}
 .links a:hover{text-decoration:underline;}
 
+/* HERO */
 .hero{
   margin:16px 0 24px; padding:28px; border-radius:28px; color:#fff;
   background:linear-gradient(180deg,var(--hero),var(--hero2));
@@ -58,13 +69,17 @@ html,body,[data-testid="stAppViewContainer"]{background:var(--bg);color:var(--in
 .cta{display:inline-block; margin-top:16px; padding:12px 18px; border-radius:999px; font-weight:900;
      background:#0e0e0e; color:#fff !important; text-decoration:none; box-shadow:0 10px 24px rgba(0,0,0,.25);}
 .photo{position:relative; height:320px;}
-.photo img{position:absolute; right:-6%; top:0; height:100%; aspect-ratio:1/1; object-fit:cover;
-           border-radius:50%; border:8px solid rgba(255,255,255,.38); box-shadow:0 10px 50px rgba(0,0,0,.35);}
+.photo img{
+  position:absolute; right:-6%; top:0; height:100%; aspect-ratio:1/1; object-fit:cover;
+  border-radius:50%; border:8px solid rgba(255,255,255,.38); box-shadow:0 10px 50px rgba(0,0,0,.35);
+}
 
+/* Cards */
 .cards{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; margin:10px 0 28px;}
 .card{background:var(--card); border:1px solid var(--bd); border-radius:18px; padding:16px; box-shadow:0 6px 24px rgba(0,0,0,.06);}
 .card h3{margin:.2rem 0 .4rem; font-size:1.05rem;}
 .card p{color:var(--mut); font-size:.95rem; margin:0;}
+
 @media (max-width: 900px){
   .hero-grid{grid-template-columns:1fr;}
   .photo{height:220px;}
@@ -73,28 +88,31 @@ html,body,[data-testid="stAppViewContainer"]{background:var(--bg);color:var(--in
 }
 html{scroll-behavior:smooth;}
 </style>
+
 <div class="nav">
-  <div class="brand">Green Sort</div>
+  <div class="brand">When AI Sees Litter</div>
   <div class="links">
-    <a href="#features">Features</a>
-    <a href="#try">Try</a>
+    <a href="#features">App features</a>
+    <a href="#try">Impact &amp; SDGs</a>
     <a href="#about">About</a>
   </div>
 </div>
 """, unsafe_allow_html=True)
 
-hero_img = data_url("hero.jpg",
-  "https://images.unsplash.com/photo-1501004318641-b39e6451bec6?q=80&w=1080&auto=format&fit=crop")
+# Use local logo if present, else a nice fallback photo
+hero_img = data_url("logo.png",
+                    "https://images.unsplash.com/photo-1501004318641-b39e6451bec6?q=80&w=1080&auto=format&fit=crop")
 
 st.markdown(f"""
 <div class="hero">
   <div class="hero-grid">
     <div>
-      <h1>SORT SMARTER</h1>
-      <div class="sub">Instant item detection with disposal rules for your city. Cleaner streams, fewer mistakes.</div>
+      <h1>Let's Start Sorting</h1>
+      <div class="sub">Point your camera at any item and get instant, city-specific disposal guidance across Japan.</div>
       <div class="rule"></div>
       <div class="chips">
-        <span class="chip">Recycling</span><span class="chip">How-to</span><span class="chip">Computer Vision</span>
+        <span class="chip">Recycling</span><span class="chip">Disposal guide</span>
+        <span class="chip">AI</span><span class="chip">Japan</span>
       </div>
       <a class="cta" href="#try">Start now</a>
     </div>
@@ -106,13 +124,14 @@ st.markdown(f"""
 st.markdown("<div id='features'></div>", unsafe_allow_html=True)
 st.markdown("""
 <div class="cards">
-  <div class="card"><h3>On-device friendly</h3><p>YOLO inference tuned for CPU. Fast enough for demos.</p></div>
-  <div class="card"><h3>City-specific guides</h3><p>Explain PET, cans, foam with local rules & posters.</p></div>
-  <div class="card"><h3>Clean, modern UI</h3><p>Rounded hero, chips, CTA — like PlantNet.</p></div>
+  <div class="card"><h3>Works on your phone or laptop</h3><p>Point the camera or upload a photo. See what it is and what to do in seconds.</p></div>
+  <div class="card"><h3>Guidance for your city</h3><p>We follow local rules & posters to show how to sort PET bottles, cans, and foam.</p></div>
+  <div class="card"><h3>Simple, friendly design</h3><p>Rounded hero, chips, and a clear CTA — like PlantNet.</p></div>
 </div>
 """, unsafe_allow_html=True)
 
 st.markdown("<div id='try'></div>", unsafe_allow_html=True)
+
 
 # ======================= Config & Model =======================
 MODEL_URL   = os.getenv("MODEL_URL", "https://raw.githubusercontent.com/Bellzum/streamlit-main/main/new_taco1.pt")
