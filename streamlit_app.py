@@ -170,7 +170,7 @@ def apply_theme():
       <div class="brand">{nav_brand_img}</div>
       <div class="links">
         <a href="#features">App features</a>
-        <a href="#sdgs">Impact &amp; SDGs</a>
+        <a href="#sdgs">Impact&amp;SDGs</a>
         <a href="#about">About us</a>
       </div>
     </div>
@@ -709,8 +709,8 @@ ol.howto{ margin:0.2rem 0 0.8rem 1.2rem; }
 <div id="features"></div>
 <div class="section-cover">
   <div class="eco-emoji">🌏</div>
-  <div class="title">Impact &amp; SDGs</div>
-  <div class="badge">Impact & SDGs</div>
+  <div class="title">Impact&amp;SDGs</div>
+  <div class="badge">Impact&SDGs</div>
 </div>
 """, unsafe_allow_html=True)
 
