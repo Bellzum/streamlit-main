@@ -501,11 +501,12 @@ def _level_for(s: float) -> str:
 
 def _level_color(level: str) -> tuple[int,int,int]:
     return {
-        "High": (35,110,65),
-        "Moderate": (70,150,100),
-        "Low": (130,190,150),
-        "Very Low": (195,225,205),
-    }.get(level, (28,160,78))
+        "High":     (50,130,80),    # unchanged
+        "Moderate": (60,140,90),    # darker than before
+        "Low":      (85,170,120),   # darker than before
+        "Very Low": (120,200,150),  # darker than before but still the lightest tier
+    }.get(level, (40,170,90))
+
 
 def draw_and_show(image_pil: Image.Image, dets):
     bgr = np.array(image_pil.convert("RGB"))[:, :, ::-1]
@@ -767,7 +768,7 @@ with st.container():
 
     # Member cards CSS
     st.markdown("""
-    <style>
+     <style>
     .member-grid{
       display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:16px; margin-top:10px;
     }
@@ -788,11 +789,12 @@ with st.container():
     .member-bio{ font-size:.92rem; line-height:1.35; margin-top:4px; }
     </style>
     """, unsafe_allow_html=True)
-
+    
     # Helper for avatar with fallback
     def avatar(local_path: str, name_seed: str) -> str:
-        # Local file if present, else initials avatar
-        return data_url(local_path, f"https://api.dicebear.com/9.x/initials/svg?seed={name_seed}&radius=50")
+        fallback = f"https://api.dicebear.com/9.x/initials/svg?seed={name_seed}&radius=50"
+        return data_url(local_path, fallback)
+
 
     # Team data (edit freely)
     MEMBERS = [
@@ -813,18 +815,26 @@ with st.container():
         },
     ]
 
-    # Render cards
-    html = ['<div class="member-grid">']
+    # Render cards (robust to missing keys)
+    from html import escape as _esc
+
+    html_parts = ['<div class="member-grid">']
     for m in MEMBERS:
-        html.append(f"""
+        name = _esc(str(m.get("name", "Member")))
+        bio  = _esc(str(m.get("bio", "")))
+        img  = m.get("img") or avatar("team/placeholder.jpg", name or "member")
+
+        html_parts.append(f"""
         <div class="member-card">
-          <img class="member-photo" src="{m['img']}" alt="{m['name']}">
+          <img class="member-photo" src="{img}" alt="{name}">
           <div>
-            <div class="member-name">{m['name']}</div>
-            <div class="member-role">{m['role']}</div>
-            <div class="member-bio">{m['bio']}</div>
+            <div class="member-name">{name}</div>
+            {f'<div class="member-bio">{bio}</div>'   if bio  else ''}
           </div>
         </div>
         """)
-    html.append("</div>")
-    st.markdown("".join(html), unsafe_allow_html=True)
+
+    html_parts.append("</div>")
+    st.markdown("".join(html_parts), unsafe_allow_html=True)
+
+
