@@ -13,59 +13,107 @@ from urllib.parse import urlparse
 st.set_page_config(page_title="When AI Sees Litter · Shibuya", page_icon="♻️", layout="wide")
 
 # ======================= THEME (light; no section borders/lines) =======================
-def apply_theme():
-    st.markdown("""
-    <style>
-      :root{
-        --pri:#79C16D; --pri2:#4FA25A; --hi:#CFEAC0; --bg:#FAFEF6; --card:#FFFFFF;
-        --txt:#0F2A1C; --mut:#6F8B7A; --pill:#EEF7E9; --bd:#E5EFE3;
-      }
-      html, body, [data-testid="stAppViewContainer"]{ background:var(--bg); color:var(--txt); }
-      .main .block-container{ padding-top:1rem !important; max-width:1200px; }
+import streamlit as st, base64, os
+st.set_page_config(page_title="Green Sort", page_icon="🌿", layout="wide")
 
-      .pill{ display:inline-block; background:var(--pill); padding:2px 10px 4px 10px;
-             border-radius:999px; color:var(--pri2); border:1px solid var(--bd); }
-      .eco-links{ display:flex; gap:10px; margin-top:10px; margin-bottom:22px; flex-wrap:wrap; }
-      .eco-link{ border-radius:999px; padding:8px 12px; border:1px solid var(--bd);
-                 background:#fff; text-decoration:none !important; color:var(--pri2) !important; font-weight:700; }
-      .eco-link:hover{ background:var(--pill); }
-      .citybadge{ display:inline-block; background:var(--pill); padding:4px 10px;
-                  border-radius:999px; border:1px solid var(--bd); color:var(--pri2); }
+def data_url(path, fallback):
+    if os.path.exists(path):
+        b64 = base64.b64encode(open(path,"rb").read()).decode()
+        ext = os.path.splitext(path)[1].lstrip(".") or "png"
+        return f"data:image/{ext};base64,{b64}"
+    return fallback
 
-      /* NEW: align the badge with the selectbox input */
-      .badge-align{ margin-top:28px; }
-      @media (max-width:640px){ .badge-align{ margin-top:8px; } }
+# ---------- PlantNet-style navbar + hero ----------
+st.markdown("""
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;700;900&display=swap');
+:root{
+  --bg:#f5f7f2; --card:#ffffff; --ink:#0f2a1c; --mut:#6f8b7a; --pri:#6f8f2b;
+  --pri2:#86a93a; --bd:#e5efe3; --hero:#6f8f2b; --hero2:#6b8a2c;
+}
+html,body,[data-testid="stAppViewContainer"]{background:var(--bg);color:var(--ink);font-family:'Poppins',ui-sans-serif;}
+.main .block-container{max-width:1120px;padding-top:0.6rem;}
 
-      .eco-card{ background:#fff; border:none; border-radius:22px; padding:18px 16px;
-                 margin:10px 0 18px 0; box-shadow:0 3px 16px rgba(0,0,0,.04); }
-      .eco-head{ display:flex; align-items:center; gap:10px; margin-bottom:6px; }
-      .eco-emoji{ font-size:1.5rem; }
-      .eco-title{ font-weight:900; font-size:1.28rem; }
-      .eco-badge{ margin-left:auto; background:var(--pill); color:var(--pri2);
-                  border:1px solid var(--bd); border-radius:999px; padding:4px 10px; font-size:.85rem; }
+.nav{
+  position:sticky; top:0; z-index:50; display:flex; align-items:center; justify-content:space-between;
+  padding:14px 8px; background:color-mix(in oklab, var(--bg) 80%, white 20%);
+  backdrop-filter: blur(8px); border-bottom:1px solid var(--bd);
+}
+.brand{font-weight:900; letter-spacing:-.02em;}
+.links{display:flex; gap:18px; font-weight:700;}
+.links a{color:inherit !important; text-decoration:none;}
+.links a:hover{text-decoration:underline;}
 
-      .eco-section-title-primary{ font-weight:900; font-size:1.12rem; color:var(--pri2); margin:8px 0 6px 0; }
-      .eco-section-title{ font-weight:800; margin:8px 0 4px 0; }
-      .eco-list{ margin:0 0 4px 0; padding-left:18px; }
-      .eco-list li{ margin:2px 0; }
-      .chip-row{ display:flex; flex-wrap:wrap; gap:8px; margin:6px 0 2px 0; }
-      .chip{ background:var(--pill); color:var(--pri2); border:1px solid var(--bd);
-             border-radius:999px; padding:4px 10px; font-size:.88rem; }
+.hero{
+  margin:16px 0 24px; padding:28px; border-radius:28px; color:#fff;
+  background:linear-gradient(180deg,var(--hero),var(--hero2));
+  box-shadow:0 20px 60px rgba(70,90,30,.22);
+}
+.hero-grid{display:grid; grid-template-columns:1.25fr 1fr; gap:24px; align-items:center;}
+.hero h1{font-size:clamp(28px,5vw,62px); line-height:1.05; margin:0 0 8px; font-weight:900;}
+.sub{opacity:.95; font-size:clamp(14px,1.1vw,18px); max-width:560px;}
+.rule{height:1px; background:rgba(255,255,255,.28); margin:14px 0;}
+.chips{display:flex; gap:8px; flex-wrap:wrap;}
+.chip{background:rgba(255,255,255,.16); border:1px solid rgba(255,255,255,.28); padding:6px 10px; border-radius:999px; font-weight:700;}
+.cta{display:inline-block; margin-top:16px; padding:12px 18px; border-radius:999px; font-weight:900;
+     background:#0e0e0e; color:#fff !important; text-decoration:none; box-shadow:0 10px 24px rgba(0,0,0,.25);}
+.photo{position:relative; height:320px;}
+.photo img{position:absolute; right:-6%; top:0; height:100%; aspect-ratio:1/1; object-fit:cover;
+           border-radius:50%; border:8px solid rgba(255,255,255,.38); box-shadow:0 10px 50px rgba(0,0,0,.35);}
 
-      .sdg-caption{ text-align:center; font-weight:800; margin-top:10px; }
+.cards{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; margin:10px 0 28px;}
+.card{background:var(--card); border:1px solid var(--bd); border-radius:18px; padding:16px; box-shadow:0 6px 24px rgba(0,0,0,.06);}
+.card h3{margin:.2rem 0 .4rem; font-size:1.05rem;}
+.card p{color:var(--mut); font-size:.95rem; margin:0;}
+@media (max-width: 900px){
+  .hero-grid{grid-template-columns:1fr;}
+  .photo{height:220px;}
+  .photo img{right:auto; left:50%; transform:translateX(-50%);}
+  .cards{grid-template-columns:1fr;}
+}
+html{scroll-behavior:smooth;}
+</style>
+<div class="nav">
+  <div class="brand">Green Sort</div>
+  <div class="links">
+    <a href="#features">Features</a>
+    <a href="#try">Try</a>
+    <a href="#about">About</a>
+  </div>
+</div>
+""", unsafe_allow_html=True)
 
-      /* Remove separators / borders */
-      [data-testid="stDivider"], hr, [role="separator"]{ display:none !important; }
-      [data-testid="stExpander"] details, [data-testid="stExpander"] summary{
-        border:none !important; box-shadow:none !important; background:transparent !important;
-      }
-      [data-testid="stHorizontalBlock"], [data-testid="stVerticalBlock"]{
-        border:none !important; box-shadow:none !important; background:transparent !important;
-      }
-      [data-testid="stHeader"]{ background:transparent !important; }
-      [data-testid="stHeader"] div{ border:none !important; box-shadow:none !important; }
-    </style>
-    """, unsafe_allow_html=True)
+hero_img = data_url("hero.jpg",
+  "https://images.unsplash.com/photo-1501004318641-b39e6451bec6?q=80&w=1080&auto=format&fit=crop")
+
+st.markdown(f"""
+<div class="hero">
+  <div class="hero-grid">
+    <div>
+      <h1>SORT SMARTER</h1>
+      <div class="sub">Instant item detection with disposal rules for your city. Cleaner streams, fewer mistakes.</div>
+      <div class="rule"></div>
+      <div class="chips">
+        <span class="chip">Recycling</span><span class="chip">How-to</span><span class="chip">Computer Vision</span>
+      </div>
+      <a class="cta" href="#try">Start now</a>
+    </div>
+    <div class="photo"><img src="{hero_img}" alt="hero"/></div>
+  </div>
+</div>
+""", unsafe_allow_html=True)
+
+st.markdown("<div id='features'></div>", unsafe_allow_html=True)
+st.markdown("""
+<div class="cards">
+  <div class="card"><h3>On-device friendly</h3><p>YOLO inference tuned for CPU. Fast enough for demos.</p></div>
+  <div class="card"><h3>City-specific guides</h3><p>Explain PET, cans, foam with local rules & posters.</p></div>
+  <div class="card"><h3>Clean, modern UI</h3><p>Rounded hero, chips, CTA — like PlantNet.</p></div>
+</div>
+""", unsafe_allow_html=True)
+
+st.markdown("<div id='try'></div>", unsafe_allow_html=True)
+
 apply_theme()
 
 # ======================= Config & Model =======================
@@ -455,7 +503,7 @@ def _level_color(level: str) -> tuple[int,int,int]:
         "Very Low": (195,225,205),
     }.get(level, (28,160,78))
 
-    
+
 def draw_and_show(image_pil: Image.Image, dets):
     bgr = np.array(image_pil.convert("RGB"))[:, :, ::-1]
     out = bgr.copy()
