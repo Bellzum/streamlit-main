@@ -11,7 +11,7 @@ import streamlit as st
 from ultralytics import YOLO
 import cv2
 
-st.set_page_config(page_title="When AI Sees Litter · Shibuya", page_icon="♻️", layout="wide")
+st.set_page_config(page_title="When AI Sees Litter", page_icon="♻️", layout="wide")
 
 # ======================= Helpers =======================
 def data_url(path: str, fallback: str | None = None) -> str:
@@ -167,7 +167,7 @@ def apply_theme():
     </style>
 
     <div class="nav">
-      <div class="brand">{nav_brand_img}<span>When AI Sees Litter</span></div>
+      <div class="brand">{nav_brand_img}</div>
       <div class="links">
         <a href="#features">App features</a>
         <a href="#sdgs">Impact &amp; SDGs</a>
@@ -287,7 +287,7 @@ GUIDE_SHIBUYA = {
             {"text": "Hanwa explains used aluminum cans are cleaned, melted and supplied as remelt scrap ingots then used again as cans.",
              "url": HANWA_CAN2CAN},
         ],
-        "images": [HANWA_CAN2CAN, CCBJI_CAN2CAN],
+        "images": [HANWA_CAN2CAN],
         "icons": [ICON_AL, ICON_STEEL],
         "link": SHIBUYA_GUIDE_URL,
         "poster": SHIBUYA_POSTER_EN,
@@ -748,49 +748,83 @@ sdg_tile(col4, "sdg13.png", None)
 st.markdown("</div></div>", unsafe_allow_html=True)
 
 # ======================= About us (container, below SDGs) =======================
+# ======================= About us (container, below SDGs) =======================
 st.markdown("""
-<style>
-/* Header strip (top of the box) */
-.section-cover{
-  display:flex; align-items:center; gap:10px;
-  padding:14px 18px; margin:14px 0 0;
-  background:linear-gradient(90deg, var(--pri2,#4FA25A), var(--pri,#79C16D));
-  color:#fff; border:1px solid var(--bd,#E5F5AD);
-  border-radius:22px 22px 0 0;
-  box-shadow:0 6px 24px rgba(0,0,0,.06);
-}
-.section-cover .eco-emoji{font-size:1.2rem;}
-.section-cover .title{font-weight:900; font-size:1.08rem; letter-spacing:-.01em;}
-.section-cover .badge{
-  margin-left:auto; background:rgba(255,255,255,.18);
-  border:1px solid rgba(255,255,255,.28);
-  padding:4px 10px; border-radius:999px; font-size:.85rem;
-}
-
-/* Magic: style the very next Streamlit block after .section-cover.
-   This makes the container look like the same physical box. */
-.section-cover + div:has(> div[data-testid="stVerticalBlock"]){
-  background:var(--card,#fff);
-  border:1px solid var(--bd,#E5EFE3);
-  border-top:none; border-radius:0 0 22px 22px;
-  padding:16px 18px;
-  box-shadow:0 6px 24px rgba(0,0,0,.06);
-}
-
-/* Minor utilities */
-.citybadge{ display:inline-block; background:var(--pill,#EEF7E9); padding:4px 10px;
-            border-radius:999px; border:1px solid var(--bd,#E5EFE3); color:var(--pri2,#4FA25A); }
-ol.howto{ margin:0.2rem 0 0.8rem 1.2rem; }
-</style>
-
-<div id="features"></div>
+<div id="about"></div>
 <div class="section-cover">
   <div class="eco-emoji">👋</div>
   <div class="title">About us</div>
-  <div class="badge">About us</div>
+  <div class="badge">Team</div>
 </div>
 """, unsafe_allow_html=True)
 
+with st.container():
+    # Intro text
+    st.markdown("""
+    <p><strong>When AI Sees Litter</strong> is a community project that helps people sort waste correctly using computer vision and local rules.
+    Shibuya is the first city we support. More cities are on the way.</p>
+    """, unsafe_allow_html=True)
 
-st.markdown(""" When AI Sees Litter” is a community project that helps people sort waste correctly using computer vision and local rules.
-    Shibuya is the first city we support. More cities are on the way """, unsafe_allow_html=True)
+    # Member cards CSS
+    st.markdown("""
+    <style>
+    .member-grid{
+      display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:16px; margin-top:10px;
+    }
+    @media (max-width: 900px){ .member-grid{ grid-template-columns:repeat(2,1fr); } }
+    @media (max-width: 600px){ .member-grid{ grid-template-columns:1fr; } }
+
+    .member-card{
+      display:flex; align-items:flex-start; gap:12px;
+      background:var(--card,#fff); border:1px solid var(--bd,#E5EFE3);
+      border-radius:16px; padding:12px 14px; box-shadow:0 3px 16px rgba(0,0,0,.04);
+    }
+    .member-photo{
+      width:56px; height:56px; border-radius:50%; object-fit:cover; flex-shrink:0;
+      background:#fff; border:2px solid #fff; box-shadow:0 0 0 2px var(--pill,#EEF7E9);
+    }
+    .member-name{ font-weight:900; }
+    .member-role{ font-size:.9rem; color:var(--mut,#6F8B7A); margin-top:2px; }
+    .member-bio{ font-size:.92rem; line-height:1.35; margin-top:4px; }
+    </style>
+    """, unsafe_allow_html=True)
+
+    # Helper for avatar with fallback
+    def avatar(local_path: str, name_seed: str) -> str:
+        # Local file if present, else initials avatar
+        return data_url(local_path, f"https://api.dicebear.com/9.x/initials/svg?seed={name_seed}&radius=50")
+
+    # Team data (edit freely)
+    MEMBERS = [
+        {
+            "name": "Bell",
+            "bio": "I'm a bioengineer — I love building technology for social impact.",
+            "img": avatar("bell.jpeg", "Bell"),
+        },
+        {
+            "name": "Lalida",
+            "bio": "I run hair salons — I make people beautiful, and I want the world around us beautiful too.",
+            "img": avatar("lalida.jpeg", "Lalida"),
+        },
+        {
+            "name": "Hadrien",
+            "bio": "I support model training and product polish.",
+            "img": avatar("hadrien.png", "Hadrien"),
+        },
+    ]
+
+    # Render cards
+    html = ['<div class="member-grid">']
+    for m in MEMBERS:
+        html.append(f"""
+        <div class="member-card">
+          <img class="member-photo" src="{m['img']}" alt="{m['name']}">
+          <div>
+            <div class="member-name">{m['name']}</div>
+            <div class="member-role">{m['role']}</div>
+            <div class="member-bio">{m['bio']}</div>
+          </div>
+        </div>
+        """)
+    html.append("</div>")
+    st.markdown("".join(html), unsafe_allow_html=True)
