@@ -2,104 +2,142 @@ import os
 import shutil
 import hashlib
 import time
+import base64
+from urllib.parse import urlparse
+
 import numpy as np
 from PIL import Image
 import streamlit as st
 from ultralytics import YOLO
 import cv2
-from urllib.parse import urlparse
-# from collections import Counter  # (unused)
 
 st.set_page_config(page_title="When AI Sees Litter · Shibuya", page_icon="♻️", layout="wide")
 
-# ======================= THEME (light; no section borders/lines) =======================
-# --- PlantNet-style navbar + hero (drop-in) ---
-import base64  # only add base64; you already imported os, streamlit, etc.
+# ======================= THEME (eco UI + PlantNet-like hero) =======================
+def apply_theme():
+    st.markdown("""
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;700;900&display=swap');
 
-def data_url(path: str, fallback: str | None = None) -> str:
-    """Return data: URL for local image if it exists, else fallback URL (if any)."""
-    try:
-        if path and os.path.exists(path):
-            with open(path, "rb") as f:
-                b64 = base64.b64encode(f.read()).decode("ascii")
-            ext = os.path.splitext(path)[1].lstrip(".").lower() or "png"
-            return f"data:image/{ext};base64,{b64}"
-    except Exception:
-        pass
-    return fallback or ""
+    :root{
+      /* brand */
+      --pri:#79C16D; --pri2:#4FA25A; --hi:#CFEAC0; --bg:#FAFEF6; --card:#FFFFFF;
+      --txt:#0F2A1C; --mut:#6F8B7A; --pill:#EEF7E9; --bd:#E5EFE3;
+      /* hero */
+      --bg2:#f5f7f2; --hero:#6f8f2b; --hero2:#6b8a2c;
+    }
+    html, body, [data-testid="stAppViewContainer"]{
+      background:var(--bg2); color:var(--txt); font-family:'Poppins',ui-sans-serif;
+    }
+    .main .block-container{ padding-top:0.6rem !important; max-width:1120px; }
 
-# Inject hero/nav CSS (kept separate from your app theme)
-st.markdown("""
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;700;900&display=swap');
+    /* --- navbar --- */
+    .nav{
+      position:sticky; top:0; z-index:50; display:flex; align-items:center; justify-content:space-between;
+      padding:14px 8px; background:rgba(245,247,242,.9);
+      -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+      border-bottom:1px solid var(--bd);
+    }
+    .brand{ font-weight:900; letter-spacing:-.02em; }
+    .links{ display:flex; gap:18px; font-weight:700; }
+    .links a{ color:inherit !important; text-decoration:none; }
+    .links a:hover{ text-decoration:underline; }
+    html{ scroll-behavior:smooth; }
 
-:root{
-  --bg:#f5f7f2; --card:#ffffff; --ink:#0f2a1c; --mut:#6f8b7a; --pri:#6f8f2b;
-  --pri2:#86a93a; --bd:#e5efe3; --hero:#6f8f2b; --hero2:#6b8a2c;
-}
-html,body,[data-testid="stAppViewContainer"]{
-  background:var(--bg); color:var(--ink); font-family:'Poppins',ui-sans-serif;
-}
-.main .block-container{max-width:1120px; padding-top:0.6rem;}
+    /* --- hero --- */
+    .hero{
+      margin:16px 0 24px; padding:28px; border-radius:28px; color:#fff;
+      background:linear-gradient(180deg,var(--hero),var(--hero2));
+      box-shadow:0 20px 60px rgba(70,90,30,.22);
+    }
+    .hero-grid{ display:grid; grid-template-columns:1.25fr 1fr; gap:24px; align-items:center; }
+    .hero h1{ font-size:clamp(28px,5vw,62px); line-height:1.05; margin:0 0 8px; font-weight:900; }
+    .sub{ opacity:.95; font-size:clamp(14px,1.1vw,18px); max-width:560px; }
+    .rule{ height:1px; background:rgba(255,255,255,.28); margin:14px 0; }
+    .chips{ display:flex; gap:8px; flex-wrap:wrap; }
+    .chip{ background:rgba(255,255,255,.16); border:1px solid rgba(255,255,255,.28);
+           padding:6px 10px; border-radius:999px; font-weight:700; }
+    .cta{ display:inline-block; margin-top:16px; padding:12px 18px; border-radius:999px; font-weight:900;
+          background:#0e0e0e; color:#fff !important; text-decoration:none; box-shadow:0 10px 24px rgba(0,0,0,.25); }
 
-/* NAV */
-.nav{
-  position:sticky; top:0; z-index:50; display:flex; align-items:center; justify-content:space-between;
-  padding:14px 8px; background:rgba(245,247,242,.9);
-  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
-  border-bottom:1px solid var(--bd);
-}
-.brand{font-weight:900; letter-spacing:-.02em;}
-.links{display:flex; gap:18px; font-weight:700;}
-.links a{color:inherit !important; text-decoration:none;}
-.links a:hover{text-decoration:underline;}
+    /* hero photo: white circle for transparent logos */
+    .photo{ position:relative; height:320px; }
+    .photo .circle{
+      position:absolute; right:-6%; top:0; height:100%; aspect-ratio:1/1;
+      background:#fff !important; border-radius:50%;
+      border:10px solid #fff; box-shadow:0 10px 50px rgba(0,0,0,.35);
+      display:flex; align-items:center; justify-content:center; overflow:hidden;
+    }
+    .photo .circle img{
+      width:86%; height:86%; object-fit:contain; background:#fff !important; border:none;
+    }
+    @media (max-width: 900px){
+      .hero-grid{ grid-template-columns:1fr; }
+      .photo{ height:220px; }
+      .photo .circle{ right:auto; left:50%; transform:translateX(-50%); }
+    }
 
-/* HERO */
-.hero{
-  margin:16px 0 24px; padding:28px; border-radius:28px; color:#fff;
-  background:linear-gradient(180deg,var(--hero),var(--hero2));
-  box-shadow:0 20px 60px rgba(70,90,30,.22);
-}
-.hero-grid{display:grid; grid-template-columns:1.25fr 1fr; gap:24px; align-items:center;}
-.hero h1{font-size:clamp(28px,5vw,62px); line-height:1.05; margin:0 0 8px; font-weight:900;}
-.sub{opacity:.95; font-size:clamp(14px,1.1vw,18px); max-width:560px;}
-.rule{height:1px; background:rgba(255,255,255,.28); margin:14px 0;}
-.chips{display:flex; gap:8px; flex-wrap:wrap;}
-.chip{background:rgba(255,255,255,.16); border:1px solid rgba(255,255,255,.28); padding:6px 10px; border-radius:999px; font-weight:700;}
-.cta{display:inline-block; margin-top:16px; padding:12px 18px; border-radius:999px; font-weight:900;
-     background:#0e0e0e; color:#fff !important; text-decoration:none; box-shadow:0 10px 24px rgba(0,0,0,.25);}
-.photo{position:relative; height:320px;}
-.photo img{
-  position:absolute; right:-6%; top:0; height:100%; aspect-ratio:1/1; object-fit:cover;
-  border-radius:50%; border:8px solid rgba(255,255,255,.38); box-shadow:0 10px 50px rgba(0,0,0,.35);
-}
+    /* --- eco UI from your original app --- */
+    .pill{ display:inline-block; background:var(--pill); padding:2px 10px 4px 10px;
+           border-radius:999px; color:var(--pri2); border:1px solid var(--bd); }
+    .eco-links{ display:flex; gap:10px; margin-top:10px; margin-bottom:22px; flex-wrap:wrap; }
+    .eco-link{ border-radius:999px; padding:8px 12px; border:1px solid var(--bd);
+               background:#fff; text-decoration:none !important; color:var(--pri2) !important; font-weight:700; }
+    .eco-link:hover{ background:var(--pill); }
+    .citybadge{ display:inline-block; background:var(--pill); padding:4px 10px;
+                border-radius:999px; border:1px solid var(--bd); color:var(--pri2); }
+    .badge-align{ margin-top:28px; } @media (max-width:640px){ .badge-align{ margin-top:8px; } }
 
-/* Cards */
-.cards{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; margin:10px 0 28px;}
-.card{background:var(--card); border:1px solid var(--bd); border-radius:18px; padding:16px; box-shadow:0 6px 24px rgba(0,0,0,.06);}
-.card h3{margin:.2rem 0 .4rem; font-size:1.05rem;}
-.card p{color:var(--mut); font-size:.95rem; margin:0;}
+    .eco-card{ background:#fff; border:none; border-radius:22px; padding:18px 16px;
+               margin:10px 0 18px 0; box-shadow:0 3px 16px rgba(0,0,0,.04); }
+    .eco-head{ display:flex; align-items:center; gap:10px; margin-bottom:6px; }
+    .eco-emoji{ font-size:1.5rem; }
+    .eco-title{ font-weight:900; font-size:1.28rem; }
+    .eco-badge{ margin-left:auto; background:var(--pill); color:var(--pri2);
+                border:1px solid var(--bd); border-radius:999px; padding:4px 10px; font-size:.85rem; }
 
-@media (max-width: 900px){
-  .hero-grid{grid-template-columns:1fr;}
-  .photo{height:220px;}
-  .photo img{right:auto; left:50%; transform:translateX(-50%);}
-  .cards{grid-template-columns:1fr;}
-}
-html{scroll-behavior:smooth;}
-</style>
+    .eco-section-title-primary{ font-weight:900; font-size:1.12rem; color:var(--pri2); margin:8px 0 6px 0; }
+    .eco-section-title{ font-weight:800; margin:8px 0 4px 0; }
+    .eco-list{ margin:0 0 4px 0; padding-left:18px; }
+    .eco-list li{ margin:2px 0; }
+    .chip-row{ display:flex; flex-wrap:wrap; gap:8px; margin:6px 0 2px 0; }
+    .chip{ background:var(--pill); color:var(--pri2); border:1px solid var(--bd);
+           border-radius:999px; padding:4px 10px; font-size:.88rem; }
 
-<div class="nav">
-  <div class="brand">When AI Sees Litter</div>
-  <div class="links">
-    <a href="#features">App features</a>
-    <a href="#try">Impact &amp; SDGs</a>
-    <a href="#about">About us</a>
-  </div>
-</div>
-""", unsafe_allow_html=True)
+    .sdg-caption{ text-align:center; font-weight:800; margin-top:10px; }
 
-# Use local logo if present, else a nice fallback photo
+    /* remove default separators */
+    [data-testid="stDivider"], hr, [role="separator"]{ display:none !important; }
+    [data-testid="stExpander"] details, [data-testid="stExpander"] summary{
+      border:none !important; box-shadow:none !important; background:transparent !important;
+    }
+    [data-testid="stHorizontalBlock"], [data-testid="stVerticalBlock"]{
+      border:none !important; box-shadow:none !important; background:transparent !important;
+    }
+    [data-testid="stHeader"]{ background:transparent !important; }
+    [data-testid="stHeader"] div{ border:none !important; box-shadow:none !important; }
+    </style>
+
+    <div class="nav">
+      <div class="brand">When AI Sees Litter</div>
+      <div class="links">
+        <a href="#features">App features</a>
+        <a href="#sdgs">Impact &amp; SDGs</a>
+        <a href="#about">About us</a>
+      </div>
+    </div>
+    """, unsafe_allow_html=True)
+apply_theme()
+
+# ======================= Hero block =======================
+def data_url(path: str, fallback: str) -> str:
+    if path and os.path.exists(path):
+        with open(path, "rb") as f:
+            b64 = base64.b64encode(f.read()).decode("ascii")
+        ext = os.path.splitext(path)[1].lstrip(".").lower() or "png"
+        return f"data:image/{ext};base64,{b64}"
+    return fallback
+
 hero_img = data_url("logo.png",
                     "https://images.unsplash.com/photo-1501004318641-b39e6451bec6?q=80&w=1080&auto=format&fit=crop")
 
@@ -111,27 +149,14 @@ st.markdown(f"""
       <div class="sub">Point your camera at any item and get instant, city-specific disposal guidance across Japan.</div>
       <div class="rule"></div>
       <div class="chips">
-        <span class="chip">Recycling</span><span class="chip">Disposal guide</span>
-        <span class="chip">AI</span>
+        <span class="chip">Recycling</span><span class="chip">Disposal guide</span><span class="chip">AI</span>
       </div>
-      <a class="cta" href="#try">Start now</a>
+      <a class="cta" href="#features">Start now</a>
     </div>
     <div class="photo"><div class="circle"><img src="{hero_img}" alt="hero"/></div></div>
   </div>
 </div>
 """, unsafe_allow_html=True)
-
-st.markdown("<div id='features'></div>", unsafe_allow_html=True)
-st.markdown("""
-<div class="cards">
-  <div class="card"><h3>Works on your phone or laptop</h3><p>Point the camera or upload a photo. See what it is and what to do in seconds.</p></div>
-  <div class="card"><h3>Guidance for your city</h3><p>We follow your local rules and posters to show how to sort PET bottles, cans, and foam.</p></div>
-  <div class="card"><h3>Simple, friendly design</h3><p>Big buttons and clear steps help anyone use the app with confidence.</p></div>
-  </div>
-""", unsafe_allow_html=True)
-
-st.markdown("<div id='try'></div>", unsafe_allow_html=True)
-
 
 # ======================= Config & Model =======================
 MODEL_URL   = os.getenv("MODEL_URL", "https://raw.githubusercontent.com/Bellzum/streamlit-main/main/new_taco1.pt")
@@ -141,10 +166,8 @@ CACHED_DIR  = "/tmp/models"
 def _hash_url(u: str) -> str: return hashlib.sha1(u.encode("utf-8")).hexdigest()[:12]
 CACHED_PATH = os.path.join(CACHED_DIR, f"weights_{_hash_url(MODEL_URL)}.pt")
 
-# Static-mode options
 IMGSZ_OPTIONS = [200, 320, 416, 512, 640, 800, 960, 1280]
 
-# Force UI names
 FORCE_CLASS_NAMES = True
 TARGET_NAMES = ["Clear plastic bottle", "Drink can", "Styrofoam piece"]
 
@@ -162,7 +185,6 @@ ICON_PET   = "https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/Recyclin
 ICON_AL    = "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Recycling_alumi.svg/120px-Recycling_alumi.svg.png"
 ICON_STEEL = "https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Recycling_steel.svg/120px-Recycling_steel.svg.png"
 ICON_PLA   = "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8b/Recycling_pla.svg/120px-Recycling_pla.svg.png"
-
 LINK_UN_CNP  = "https://unfccc.int/climate-action/united-nations-carbon-offset-platform"
 LINK_UN_CNP2 = "https://offset.climateneutralnow.org/"
 LINK_WB_MRV  = "https://www.worldbank.org/en/news/feature/2022/07/27/what-you-need-to-know-about-the-measurement-reporting-and-verification-mrv-of-carbon-credits"
@@ -223,7 +245,7 @@ GUIDE_SHIBUYA = {
             {"text": "Hanwa explains used aluminum cans are cleaned, melted and supplied as remelt scrap ingots then used again as cans.",
              "url": HANWA_CAN2CAN},
         ],
-        "images": [HANWA_CAN2CAN],
+        "images": [HANWA_CAN2CAN, CCBJI_CAN2CAN],
         "icons": [ICON_AL, ICON_STEEL],
         "link": SHIBUYA_GUIDE_URL,
         "poster": SHIBUYA_POSTER_EN,
@@ -308,7 +330,6 @@ def load_model():
     path = _ensure_model_path()
     return _load_model_cached(path, _cache_key_for(path))
 
-# Preload for static modes
 GLOBAL_MODEL = load_model()
 
 # ======================= Utils =======================
@@ -395,16 +416,11 @@ def show_guidance_card(label: str, count: int = 0, GUIDE=None):
     st.markdown('</div>', unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
-# ======================= HEADER (logo only) =======================
-logo_col, _ = st.columns([3, 5])
-with logo_col:
-    if os.path.exists("logo.png"):
-        st.image("logo.png", use_container_width=True)
-
-# ======================= MAIN INTRO =======================
+# ======================= Anchored "App features" section =======================
+st.markdown("<div id='features'></div>", unsafe_allow_html=True)
 st.markdown("### Let’s Start Sorting!")
 
-# City/Ward block
+# City / Ward
 c1, c2 = st.columns([2, 6])
 with c1:
     city_label = st.selectbox("City / Ward", ["Shibuya (Tokyo)"], index=0)
@@ -435,8 +451,8 @@ else:
     shot = st.camera_input("Open your camera", key="cam1")
     if shot: image = Image.open(shot).convert("RGB")
 
-# ======================= Advanced settings (below inputs) =======================
-_REC_CONF=0.00; _REC_IOU=0.00; _REC_IMGSZ=416
+# ======================= Advanced settings =======================
+_REC_CONF=0.00; _REC_IOU=0.00; _REC_IMGSZ=200
 _REC_BOTTLE=0.20; _REC_CAN=0.20; _REC_FOAM=0.20; _REC_AREA_PCT=0.20; _REC_TTA=True
 
 conf=_REC_CONF; iou=_REC_IOU; imgsz=_REC_IMGSZ
@@ -452,7 +468,7 @@ with st.expander("Advanced settings (optional)"):
         conf=_REC_CONF; iou=_REC_IOU; imgsz=_REC_IMGSZ
         bottle_min=_REC_BOTTLE; can_min=_REC_CAN; foam_min=_REC_FOAM; min_area_pct=_REC_AREA_PCT; tta=_REC_TTA
     elif preset == "Strict":
-        conf=0.35; iou=0.50; imgsz=416
+        conf=0.35; iou=0.50; imgsz=640
         bottle_min=0.70; can_min=0.70; foam_min=0.75; min_area_pct=0.5; tta=False
 
     conf = st.slider("Base confidence", 0.0, 0.95, float(conf), 0.01)
@@ -468,7 +484,7 @@ with st.expander("Advanced settings (optional)"):
 
 st.caption("Model loaded ✅")
 
-# ======================= Detection (static) =======================
+# ======================= Detection =======================
 def run_detection(image_pil: Image.Image):
     model = GLOBAL_MODEL
     bgr = np.array(image_pil.convert("RGB"))[:, :, ::-1]
@@ -505,13 +521,12 @@ def run_detection(image_pil: Image.Image):
         counts[name] = counts.get(name, 0) + 1
     return dets, counts
 
-# level colors (BGR): darker for higher level
+# Color levels (no level text in label)
 def _level_for(s: float) -> str:
     if s >= 0.80: return "High"
     if s >= 0.60: return "Moderate"
     if s >= 0.40: return "Low"
     return "Very Low"
-
 def _level_color(level: str) -> tuple[int,int,int]:
     return {
         "High": (35,110,65),
@@ -520,33 +535,26 @@ def _level_color(level: str) -> tuple[int,int,int]:
         "Very Low": (195,225,205),
     }.get(level, (28,160,78))
 
-
 def draw_and_show(image_pil: Image.Image, dets):
     bgr = np.array(image_pil.convert("RGB"))[:, :, ::-1]
     out = bgr.copy()
     H, W = out.shape[:2]
     for d in dets:
         x1, y1, x2, y2 = map(int, d["xyxy"])
-        lvl = _level_for(float(d["score"]))          # keep for color only
+        lvl = _level_for(float(d["score"]))          # for color only
         color = _level_color(lvl)
-
-        # 🔻 label without any trailing level string
-        label = f'{d["class_name"]} {d["score"]:.2f}'
-
         cv2.rectangle(out, (x1, y1), (x2, y2), color, 2)
+        label = f'{d["class_name"]} {d["score"]:.2f}'
         (tw, th), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
         y_text = y1 - 4
         if y_text - th - 4 < 0: y_text = min(y1 + th + 6, H - 2)
         x_text = max(0, min(x1, W - tw - 6))
         cv2.rectangle(out, (x_text, max(0, y_text - th - 4)),
                            (min(x_text + tw + 6, W - 1), min(y_text + 2, H - 1)), color, -1)
-        cv2.putText(out, label, (x_text + 3, y_text - 2),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,255,255), 1, cv2.LINE_AA)
-
+        cv2.putText(out, label, (x_text + 3, y_text - 2), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,255,255), 1, cv2.LINE_AA)
     st.image(Image.fromarray(out[:, :, ::-1]), caption="Detections", use_container_width=True)
 
-
-# Auto-run
+# Run
 if image is not None:
     st.image(image, caption="Input", use_container_width=True)
     should_run = auto_run or st.button("Run detection")
@@ -565,11 +573,12 @@ if image is not None:
         else:
             st.info("All detections were filtered by thresholds. Try lowering per class thresholds or min box area.")
 
-# ======================= Impact & SDGs =======================
+# ======================= Impact & SDGs (anchor) =======================
+st.markdown("<div id='sdgs'></div>", unsafe_allow_html=True)
 st.markdown("#### Impact & SDGs")
 st.markdown("""
-- **Carbon credits (what they are):** A carbon credit represents **1 tonne of CO₂ equivalent** reduced or removed. Credits exist only when a **registered project** follows an **approved methodology** and passes **MRV**. They are then **issued on a registry** such as Gold Standard, Verra, or Japan’s J Credit.
-- **This app does not issue credits.** It helps people sort properly. Educational CO₂e avoided estimates are okay, but they are **not credits**.
+- **Carbon credits (what they are):** A carbon credit represents **1 tonne of CO₂ equivalent** reduced or removed. Credits exist only when a **registered project** follows an **approved methodology** and passes **MRV**. They are then **issued on a registry** such as Gold Standard, Verra, or Japan’s J-Credit.
+- **This app does not issue credits.** It helps people sort properly. Educational CO₂e-avoided estimates are okay, but they are **not credits**.
 """, unsafe_allow_html=True)
 st.markdown(
     f"""
@@ -579,22 +588,34 @@ st.markdown(
   <a class="eco-link" href="{LINK_WB_MRV}"  target="_blank" rel="noopener">World Bank: MRV</a>
   <a class="eco-link" href="{LINK_GS}"      target="_blank" rel="noopener">Gold Standard</a>
   <a class="eco-link" href="{LINK_VERRA}"   target="_blank" rel="noopener">Verra VCS</a>
-  <a class="eco-link" href="{LINK_JCREDIT}" target="_blank" rel="noopener">Japan J Credit</a>
+  <a class="eco-link" href="{LINK_JCREDIT}" target="_blank" rel="noopener">Japan J-Credit</a>
 </div>
 """, unsafe_allow_html=True)
 
-# SDG tiles
-col1, col2, col3, col4 = st.columns(4)
-def sdg_tile(col, path, label):
+# SDG tiles (optional captions; hide SDG11 text)
+col1, col2, col3 = st.columns(3)
+def sdg_tile(col, path, label=None):
     with col:
         if os.path.exists(path):
             st.image(path, width=180)
         else:
             st.warning(f"Missing {path}")
-        if label:  # only render when provided
+        if label:
             st.markdown(f"<div class='sdg-caption'>{label}</div>", unsafe_allow_html=True)
 
-sdg_tile(col1, "sdg_logo.jpg", None)
-sdg_tile(col3, "sdg11.png", None)
-sdg_tile(col2, "sdg12.png", None)
-sdg_tile(col4, "sdg13.png", None)
+sdg_tile(col1, "sdg12.png", "12 Responsible Consumption and Production")
+sdg_tile(col2, "sdg11.png", None)  # no caption text
+sdg_tile(col3, "sdg13.png", "13 Climate Action")
+
+# ======================= About us (anchor *below* SDG images) =======================
+st.markdown("<div id='about'></div>", unsafe_allow_html=True)
+st.markdown("""
+<div class="eco-card">
+  <div class="eco-head">
+    <div class="eco-emoji">👋</div>
+    <div class="eco-title">About us</div>
+  </div>
+  <p>“When AI Sees Litter” is a community project that helps people sort waste correctly using computer vision and local rules.
+  Shibuya is the first city we support. More cities are on the way.</p>
+</div>
+""", unsafe_allow_html=True)
