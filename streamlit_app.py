@@ -527,6 +527,7 @@ def draw_and_show(image_pil: Image.Image, dets):
     st.image(Image.fromarray(out[:, :, ::-1]), caption="Detections", use_container_width=True)
 
 # ======================= “Let’s Start Sorting” (everything inside the section) =======================
+# ======================= “Let’s Start Sorting” (everything inside the same box) =======================
 st.markdown("<div id='features'></div>", unsafe_allow_html=True)
 st.markdown("""
 <div class="section">
@@ -539,16 +540,17 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # City / Ward row (left: selector, right: badge)
-c1, c2 = st.columns([2, 6])
+c1, c2 = st.columns([2, 6], vertical_alignment="center")
 with c1:
     city_label = st.selectbox("City / Ward", ["Shibuya (Tokyo)"], index=0)
 with c2:
-    st.markdown("<div class='citybadge badge-align'>More cities coming soon</div>", unsafe_allow_html=True)
+    # aligned to the selectbox line
+    st.markdown("<div class='citybadge'>More cities coming soon</div>", unsafe_allow_html=True)
 
 city_id = CITY_MAP[city_label]
 GUIDE = GUIDE_BY_CITY.get(city_id, {})
 
-# Steps list
+# Steps list (kept inside the box)
 st.markdown("""
 <ol class="howto">
   <li><strong>Select Upload image</strong> or open your <strong>Camera</strong>.</li>
@@ -557,25 +559,26 @@ st.markdown("""
 </ol>
 """, unsafe_allow_html=True)
 
-# ---- Inputs (inside the section) ----
+# ---- Inputs (kept inside the box) ----
 src = st.radio("Input source", ["Upload image", "Camera"], index=0, horizontal=True)
 auto_run = st.toggle("Auto-run detection", value=True, help="Run detection automatically after you choose or take a photo.")
 
 image = None
 if src == "Upload image":
-    up = st.file_uploader("Choose an image", type=["jpg","jpeg","png"], accept_multiple_files=False,
-                          help="Drag and drop file here")
-    if not up:
-        st.caption("No file chosen")
-    else:
+    up = st.file_uploader(
+        "Choose an image",
+        type=["jpg", "jpeg", "png"],
+        accept_multiple_files=False,
+        help="Drag and drop file here · Limit 200MB per file · JPG, JPEG, PNG",
+    )
+    if up:
         image = Image.open(up).convert("RGB")
-    st.caption("Limit 200MB per file • JPG, JPEG, PNG")
 else:
     shot = st.camera_input("Open your camera", key="cam1")
     if shot:
         image = Image.open(shot).convert("RGB")
 
-# ---- Advanced settings (inside the section) ----
+# ---- Advanced settings (kept inside the box) ----
 _REC_CONF=0.00; _REC_IOU=0.00; _REC_IMGSZ=200
 _REC_BOTTLE=0.20; _REC_CAN=0.20; _REC_FOAM=0.20; _REC_AREA_PCT=0.20; _REC_TTA=True
 
@@ -606,9 +609,10 @@ with st.expander("Advanced settings (optional)"):
                               help="Ignore tiny boxes by percent of image area.")
     tta = st.toggle("Test time augmentation", value=tta, help="Slower. Sometimes reduces false positives.")
 
+# Always inside the box
 st.caption("Model loaded ✅")
 
-# ---- Detection flow (inside the same section) ----
+# ---- Detection flow (kept inside the same box) ----
 if image is not None:
     st.image(image, caption="Input", use_container_width=True)
     should_run = auto_run or st.button("Run detection")
@@ -628,11 +632,10 @@ if image is not None:
             else:
                 st.caption("No local guidance to show for these detections.")
         else:
-            st.info("All detections were filtered by thresholds. Try lowering per class thresholds or min box area.")
+            st.info("All detections were filtered by thresholds. Try lowering per-class thresholds or min box area.")
 
-# Close the section
+# Close the section box
 st.markdown("</div></div>", unsafe_allow_html=True)
-
 # ======================= Impact & SDGs (container) =======================
 st.markdown("<div id='sdgs'></div>", unsafe_allow_html=True)
 st.markdown("""
