@@ -442,31 +442,44 @@ def run_detection(image_pil: Image.Image):
 
 # level colors (BGR): darker for higher level
 def _level_for(s: float) -> str:
-    if s >= 0.80: return ""
-    if s >= 0.60: return ""
-    if s >= 0.40: return ""
+    if s >= 0.80: return "High"
+    if s >= 0.60: return "Moderate"
+    if s >= 0.40: return "Low"
     return "Very Low"
-def _level_color(level: str) -> tuple[int,int,int]:
-    return {"High":(35,110,65),"Moderate":(70,150,100),"Low":(130,190,150),"Very Low":(195,225,205)}.get(level,(28,160,78))
 
+def _level_color(level: str) -> tuple[int,int,int]:
+    return {
+        "High": (35,110,65),
+        "Moderate": (70,150,100),
+        "Low": (130,190,150),
+        "Very Low": (195,225,205),
+    }.get(level, (28,160,78))
+
+    
 def draw_and_show(image_pil: Image.Image, dets):
     bgr = np.array(image_pil.convert("RGB"))[:, :, ::-1]
     out = bgr.copy()
     H, W = out.shape[:2]
     for d in dets:
         x1, y1, x2, y2 = map(int, d["xyxy"])
-        lvl = _level_for(float(d["score"]))
+        lvl = _level_for(float(d["score"]))          # keep for color only
         color = _level_color(lvl)
+
+        # 🔻 label without any trailing level string
+        label = f'{d["class_name"]} {d["score"]:.2f}'
+
         cv2.rectangle(out, (x1, y1), (x2, y2), color, 2)
-        label = f'{d["class_name"]} {d["score"]:.2f} · {lvl}'
         (tw, th), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
         y_text = y1 - 4
         if y_text - th - 4 < 0: y_text = min(y1 + th + 6, H - 2)
         x_text = max(0, min(x1, W - tw - 6))
         cv2.rectangle(out, (x_text, max(0, y_text - th - 4)),
                            (min(x_text + tw + 6, W - 1), min(y_text + 2, H - 1)), color, -1)
-        cv2.putText(out, label, (x_text + 3, y_text - 2), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,255,255), 1, cv2.LINE_AA)
+        cv2.putText(out, label, (x_text + 3, y_text - 2),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,255,255), 1, cv2.LINE_AA)
+
     st.image(Image.fromarray(out[:, :, ::-1]), caption="Detections", use_container_width=True)
+
 
 # Auto-run
 if image is not None:
