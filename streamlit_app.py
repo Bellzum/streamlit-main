@@ -690,8 +690,7 @@ st.markdown("""
   padding:4px 10px; border-radius:999px; font-size:.85rem;
 }
 
-/* Magic: style the very next Streamlit block after .section-cover.
-   This makes the container look like the same physical box. */
+/* Make the very next Streamlit block after .section-cover look like the same box */
 .section-cover + div:has(> div[data-testid="stVerticalBlock"]){
   background:var(--card,#fff);
   border:1px solid var(--bd,#E5EFE3);
@@ -700,28 +699,31 @@ st.markdown("""
   box-shadow:0 6px 24px rgba(0,0,0,.06);
 }
 
-/* Minor utilities */
-.citybadge{ display:inline-block; background:var(--pill,#EEF7E9); padding:4px 10px;
-            border-radius:999px; border:1px solid var(--bd,#E5EFE3); color:var(--pri2,#4FA25A); }
-ol.howto{ margin:0.2rem 0 0.8rem 1.2rem; }
+/* Small utilities reused in this section */
+.eco-links{ display:flex; gap:10px; margin-top:10px; margin-bottom:16px; flex-wrap:wrap; }
+.eco-link{ border-radius:999px; padding:8px 12px; border:1px solid var(--bd,#E5EFE3);
+           background:#fff; text-decoration:none !important; color:var(--pri2,#4FA25A) !important; font-weight:700; }
+.eco-link:hover{ background:var(--pill,#EEF7E9); }
+.sdg-caption{ text-align:center; font-weight:800; margin-top:10px; }
 </style>
 
-st.markdown("""
-<div id="sdgs"></div>   <!-- was id="features" -->
+<div id="sdgs"></div>
 <div class="section-cover">
   <div class="eco-emoji">🌏</div>
   <div class="title">Impact&amp;SDGs</div>
-  <div class="badge">Impact&SDGs</div>
+  <div class="badge">Impact&amp;SDGs</div>
 </div>
 """, unsafe_allow_html=True)
 
-st.markdown("""
+with st.container():
+    st.markdown("""
 - **Carbon credits (what they are):** A carbon credit represents **1 tonne of CO₂ equivalent** reduced or removed. Credits exist only when a **registered project** follows an **approved methodology** and passes **MRV**. They are then **issued on a registry** such as Gold Standard, Verra, or Japan’s J-Credit.<br><br>
 - **This app does not issue credits.** It helps people sort properly. Educational CO₂e-avoided estimates are okay, but they are **not credits**.
 """, unsafe_allow_html=True)
 
-st.markdown(
-    f"""
+    # Link pills (uses constants you defined earlier for the URLs)
+    st.markdown(
+        f"""
 <div class="eco-links">
   <a class="eco-link" href="{LINK_UN_CNP}"  target="_blank" rel="noopener">UN Carbon Offset Platform</a>
   <a class="eco-link" href="{LINK_UN_CNP2}" target="_blank" rel="noopener">Climate Neutral Now</a>
@@ -732,22 +734,23 @@ st.markdown(
 </div>
 """, unsafe_allow_html=True)
 
-# SDG tiles (caption optional; hide SDG11 text)
-col1, col2, col3,col4 = st.columns(4)
-def sdg_tile(col, path, label=None):
-    with col:
-        if os.path.exists(path):
-            st.image(path, width=120)
-        else:
-            st.warning(f"Missing {path}")
-        if label:
-            st.markdown(f"<div class='sdg-caption'>{label}</div>", unsafe_allow_html=True)
-sdg_tile(col1, "sdg_logo.jpg", None)
-sdg_tile(col2, "sdg11.png", None)
-sdg_tile(col3, "sdg12.png", None)  # no caption text
-sdg_tile(col4, "sdg13.png", None)
+    # SDG tiles
+    col1, col2, col3, col4 = st.columns(4)
 
-st.markdown("</div></div>", unsafe_allow_html=True)
+    def sdg_tile(col, path, label=None):
+        with col:
+            if os.path.exists(path):
+                st.image(path, width=120)
+            else:
+                st.warning(f"Missing {path}")
+            if label:
+                st.markdown(f"<div class='sdg-caption'>{label}</div>", unsafe_allow_html=True)
+
+    sdg_tile(col1, "sdg_logo.jpg", None)
+    sdg_tile(col2, "sdg11.png", None)
+    sdg_tile(col3, "sdg12.png", None)
+    sdg_tile(col4, "sdg13.png", None)
+
 
 # ======================= About us (container, below SDGs) =======================
 st.markdown("""
