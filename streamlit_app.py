@@ -677,7 +677,7 @@ st.markdown("""
   display:flex; align-items:center; gap:10px;
   padding:14px 18px; margin:14px 0 0;
   background:linear-gradient(90deg, var(--pri2,#4FA25A), var(--pri,#79C16D));
-  color:#fff; border:1px solid var(--bd,#E5EFE3);
+  color:#fff; border:1px solid var(--bd,#D6EEA3);
   border-radius:22px 22px 0 0;
   box-shadow:0 6px 24px rgba(0,0,0,.06);
 }
@@ -755,7 +755,7 @@ st.markdown("""
   display:flex; align-items:center; gap:10px;
   padding:14px 18px; margin:14px 0 0;
   background:linear-gradient(90deg, var(--pri2,#4FA25A), var(--pri,#79C16D));
-  color:#fff; border:1px solid var(--bd,#E5EFE3);
+  color:#fff; border:1px solid var(--bd,#E5F5AD);
   border-radius:22px 22px 0 0;
   box-shadow:0 6px 24px rgba(0,0,0,.06);
 }
