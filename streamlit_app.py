@@ -749,7 +749,7 @@ sdg_tile(col4, "sdg13.png", None)
 st.markdown("</div></div>", unsafe_allow_html=True)
 
 # ======================= About us (container, below SDGs) =======================
-# ======================= About us (container, below SDGs) =======================
+
 st.markdown("""
 <div id="about"></div>
 <div class="section-cover">
@@ -795,7 +795,6 @@ with st.container():
         fallback = f"https://api.dicebear.com/9.x/initials/svg?seed={name_seed}&radius=50"
         return data_url(local_path, fallback)
 
-
     # Team data (edit freely)
     MEMBERS = [
         {
@@ -822,7 +821,7 @@ with st.container():
     for m in MEMBERS:
         name = _esc(str(m.get("name", "Member")))
         bio  = _esc(str(m.get("bio", "")))
-        img  = m.get("img") or avatar("team/placeholder.jpg", name or "member")
+        img  = m.get("img") or avatar("", name)
 
         html_parts.append(f"""
         <div class="member-card">
@@ -836,5 +835,3 @@ with st.container():
 
     html_parts.append("</div>")
     st.markdown("".join(html_parts), unsafe_allow_html=True)
-
-
