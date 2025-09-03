@@ -114,8 +114,6 @@ st.markdown("""
 
 st.markdown("<div id='try'></div>", unsafe_allow_html=True)
 
-apply_theme()
-
 # ======================= Config & Model =======================
 MODEL_URL   = os.getenv("MODEL_URL", "https://raw.githubusercontent.com/Bellzum/streamlit-main/main/new_taco1.pt")
 LOCAL_MODEL = os.getenv("LOCAL_MODEL", "best.pt")
