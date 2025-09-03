@@ -785,7 +785,6 @@ with st.container():
       background:#fff; border:2px solid #fff; box-shadow:0 0 0 2px var(--pill,#EEF7E9);
     }
     .member-name{ font-weight:900; }
-    .member-role{ font-size:.9rem; color:var(--mut,#6F8B7A); margin-top:2px; }
     .member-bio{ font-size:.92rem; line-height:1.35; margin-top:4px; }
     </style>
     """, unsafe_allow_html=True)
