@@ -715,7 +715,7 @@ ol.howto{ margin:0.2rem 0 0.8rem 1.2rem; }
 """, unsafe_allow_html=True)
 
 st.markdown("""
-- **Carbon credits (what they are):** A carbon credit represents **1 tonne of CO₂ equivalent** reduced or removed. Credits exist only when a **registered project** follows an **approved methodology** and passes **MRV**. They are then **issued on a registry** such as Gold Standard, Verra, or Japan’s J-Credit.
+- **Carbon credits (what they are):** A carbon credit represents **1 tonne of CO₂ equivalent** reduced or removed. Credits exist only when a **registered project** follows an **approved methodology** and passes **MRV**. They are then **issued on a registry** such as Gold Standard, Verra, or Japan’s J-Credit.<br><br>
 - **This app does not issue credits.** It helps people sort properly. Educational CO₂e-avoided estimates are okay, but they are **not credits**.
 """, unsafe_allow_html=True)
 
@@ -749,7 +749,6 @@ sdg_tile(col4, "sdg13.png", None)
 st.markdown("</div></div>", unsafe_allow_html=True)
 
 # ======================= About us (container, below SDGs) =======================
-
 st.markdown("""
 <div id="about"></div>
 <div class="section-cover">
@@ -768,7 +767,7 @@ with st.container():
 
     # Member cards CSS
     st.markdown("""
-     <style>
+    <style>
     .member-grid{
       display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:16px; margin-top:10px;
     }
@@ -785,11 +784,12 @@ with st.container():
       background:#fff; border:2px solid #fff; box-shadow:0 0 0 2px var(--pill,#EEF7E9);
     }
     .member-name{ font-weight:900; }
+    .member-role{ font-size:.9rem; color:var(--mut,#6F8B7A); margin-top:2px; }
     .member-bio{ font-size:.92rem; line-height:1.35; margin-top:4px; }
     </style>
     """, unsafe_allow_html=True)
-    
-    # Helper for avatar with fallback
+
+    # Helper for avatar with fallback (expects data_url() defined earlier)
     def avatar(local_path: str, name_seed: str) -> str:
         fallback = f"https://api.dicebear.com/9.x/initials/svg?seed={name_seed}&radius=50"
         return data_url(local_path, fallback)
@@ -813,8 +813,9 @@ with st.container():
         },
     ]
 
-    # Render cards (robust to missing keys)
+    # Render cards (no leading spaces -> not treated as Markdown code)
     from html import escape as _esc
+    import textwrap
 
     html_parts = ['<div class="member-grid">']
     for m in MEMBERS:
@@ -822,15 +823,15 @@ with st.container():
         bio  = _esc(str(m.get("bio", "")))
         img  = m.get("img") or avatar("", name)
 
-        html_parts.append(f"""
-        <div class="member-card">
-          <img class="member-photo" src="{img}" alt="{name}">
-          <div>
-            <div class="member-name">{name}</div>
-            {f'<div class="member-bio">{bio}</div>'   if bio  else ''}
-          </div>
-        </div>
-        """)
+        html_parts.append(textwrap.dedent(f"""\
+<div class="member-card">
+  <img class="member-photo" src="{img}" alt="{name}">
+  <div>
+    <div class="member-name">{name}</div>
+    {f'<div class="member-bio">{bio}</div>' if bio else ''}
+  </div>
+</div>
+"""))
 
     html_parts.append("</div>")
     st.markdown("".join(html_parts), unsafe_allow_html=True)
