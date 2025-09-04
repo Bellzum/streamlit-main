@@ -527,7 +527,11 @@ def draw_and_show(image_pil: Image.Image, dets):
         cv2.putText(out, label, (x_text + 3, y_text - 2), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,255,255), 1, cv2.LINE_AA)
     st.image(Image.fromarray(out[:, :, ::-1]), caption="Detections", use_container_width=True)
 
-# ---------- Reusable highlight box (add once above the sections) ----------
+
+
+# ======================= ONE-BOX “Let’s Start Sorting” =======================
+
+# Reusable highlight box (put once above the section)
 st.markdown("""
 <style>
 .info-box{
@@ -542,12 +546,10 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 def info_box(inner_html: str):
-    """Render a styled info box. Pass already-escaped HTML (e.g., <ul>, <strong>, text)."""
+    """Render a styled info box. Pass HTML (e.g., <ul>, <strong>, text)."""
     st.markdown(f'<div class="info-box">{inner_html}</div>', unsafe_allow_html=True)
 # -------------------------------------------------------------------------
 
-
-# ======================= ONE-BOX “Let’s Start Sorting” =======================
 st.markdown("""
 <style>
 .section-cover{
@@ -625,7 +627,7 @@ with st.container():
             image = Image.open(shot).convert("RGB")
 
     # Advanced settings
-    _REC_CONF=0.00; _REC_IOU=0.00; _REC_IMGSZ=200
+    _REC_CONF=0.00; _REC_IOU=0.00; _REC_IMGSZ=416
     _REC_BOTTLE=0.20; _REC_CAN=0.20; _REC_FOAM=0.20; _REC_AREA_PCT=0.20; _REC_TTA=True
 
     conf=_REC_CONF; iou=_REC_IOU; imgsz=_REC_IMGSZ
