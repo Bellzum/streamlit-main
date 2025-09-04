@@ -528,8 +528,7 @@ def draw_and_show(image_pil: Image.Image, dets):
     st.image(Image.fromarray(out[:, :, ::-1]), caption="Detections", use_container_width=True)
 
 # ======================= ONE-BOX “Let’s Start Sorting” =======================
-# (Put this where you want the section to appear)
-
+# ===== Styles for header + body box (once, above the section) =====
 st.markdown("""
 <style>
 .section-cover{
@@ -579,9 +578,10 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-
-# Everything below renders inside the styled “same box”
+# ---------- body begins: everything inside .section-body box ----------
 with st.container():
+    st.markdown('<div class="section-body">', unsafe_allow_html=True)
+
     # City / Ward row
     c1, c2 = st.columns([2, 6], vertical_alignment="center")
     with c1:
@@ -620,8 +620,8 @@ with st.container():
         if shot:
             image = Image.open(shot).convert("RGB")
 
-    # Advanced settings
-    _REC_CONF=0.00; _REC_IOU=0.00; _REC_IMGSZ=416
+    # Advanced settings (use your IMGSZ_OPTIONS etc.)
+    _REC_CONF=0.00; _REC_IOU=0.00; _REC_IMGSZ=200
     _REC_BOTTLE=0.20; _REC_CAN=0.20; _REC_FOAM=0.20; _REC_AREA_PCT=0.20; _REC_TTA=True
 
     conf=_REC_CONF; iou=_REC_IOU; imgsz=_REC_IMGSZ
@@ -654,7 +654,7 @@ with st.container():
     # Status line
     st.caption("Model loaded ✅")
 
-    # Detection flow (uses your existing run_detection/draw_and_show helpers)
+    # Detection flow (uses your helpers)
     if image is not None:
         st.image(image, caption="Input", use_container_width=True)
         should_run = auto_run or st.button("Run detection")
@@ -674,21 +674,13 @@ with st.container():
                 else:
                     st.caption("No local guidance to show for these detections.")
             else:
-                st.markdown(
-                    """
-                    <div style="
-                    background:#EAF4FF;
-                    color:#0B3A67;
-                    border:1px solid #B9D7FF;
-                    border-radius:12px;
-                    padding:12px 14px;
-                    font-weight:600;
-                    ">
-                    All detections were filtered by thresholds. Try lowering per-class thresholds or min box area.
-                    </div>
-                    """,
-                    unsafe_allow_html=True
+                info_box(
+                    "All detections were filtered by thresholds. "
+                    "Try lowering per-class thresholds or min box area."
                 )
+
+    # close the body box
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # ======================= Impact & SDGs (container) =======================
 st.markdown("""
