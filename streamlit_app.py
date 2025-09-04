@@ -730,11 +730,24 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 with st.container():
-    st.markdown("""
-- **Carbon credits (what they are):** A carbon credit represents **1 tonne of CO₂ equivalent** reduced or removed. Credits exist only when a **registered project** follows an **approved methodology** and passes **MRV**. They are then **issued on a registry** such as Gold Standard, Verra, or Japan’s J-Credit.<br><br>
-- **This app does not issue credits.** It helps people sort properly. Educational CO₂e-avoided estimates are okay, but they are **not credits**.
-""", unsafe_allow_html=True)
-
+    st.markdown(
+    """
+    <div style="
+      background:#EAF4FF;
+      color:#0B3A67;
+      border:1px solid #B9D7FF;
+      border-radius:12px;
+      padding:12px 14px;
+      font-weight:600;
+    ">
+      <ul style="margin:0; padding-left:18px;">
+        <li><strong>Carbon credits (what they are):</strong> A carbon credit represents <strong>1 tonne of CO₂ equivalent</strong> reduced or removed. Credits exist only when a <strong>registered project</strong> follows an <strong>approved methodology</strong> and passes <strong>MRV</strong>. They are then <strong>issued on a registry</strong> such as Gold Standard, Verra, or Japan’s J-Credit.</li>
+        <li style="margin-top:8px;"><strong>This app does not issue credits.</strong> It helps people sort properly. Educational CO₂e-avoided estimates are okay, but they are <strong>not credits</strong>.</li>
+      </ul>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
     # Link pills (uses constants you defined earlier for the URLs)
     st.markdown(
         f"""
