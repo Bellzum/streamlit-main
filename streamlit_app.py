@@ -508,24 +508,66 @@ def _level_color(level: str) -> tuple[int,int,int]:
     }.get(level, (40,170,90))
 
 
-def draw_and_show(image_pil: Image.Image, dets):
+def draw_and_show(
+    image_pil: Image.Image,
+    dets,
+    *,
+    thickness: int | None = None,     # set to force a fixed line thickness
+    font_scale: float | None = None,  # set to force a fixed font scale
+    show_width: int | None = None     # width (px) for st.image; else container width
+):
     bgr = np.array(image_pil.convert("RGB"))[:, :, ::-1]
     out = bgr.copy()
     H, W = out.shape[:2]
+
+    # Auto-size based on image dimensions (tweak multipliers to taste)
+    auto_thick = max(2, int(0.0030 * (H + W)))   # a bit thicker than before
+    auto_font  = max(0.6, 0.0012 * (H + W))      # bigger font than before
+
+    thick = thickness if thickness is not None else auto_thick
+    fscale = font_scale if font_scale is not None else auto_font
+    text_thick = max(1, thick // 2)              # text stroke proportional to box
+
     for d in dets:
         x1, y1, x2, y2 = map(int, d["xyxy"])
-        lvl = _level_for(float(d["score"]))          # for color only
+        lvl = _level_for(float(d["score"]))          # color tier
         color = _level_color(lvl)
-        cv2.rectangle(out, (x1, y1), (x2, y2), color, 2)
+
+        # Draw box
+        cv2.rectangle(out, (x1, y1), (x2, y2), color, thick)
+
+        # Label
         label = f'{d["class_name"]} {d["score"]:.2f}'
-        (tw, th), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
-        y_text = y1 - 4
-        if y_text - th - 4 < 0: y_text = min(y1 + th + 6, H - 2)
-        x_text = max(0, min(x1, W - tw - 6))
-        cv2.rectangle(out, (x_text, max(0, y_text - th - 4)),
-                           (min(x_text + tw + 6, W - 1), min(y_text + 2, H - 1)), color, -1)
-        cv2.putText(out, label, (x_text + 3, y_text - 2), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,255,255), 1, cv2.LINE_AA)
-    st.image(Image.fromarray(out[:, :, ::-1]), caption="Detections", use_container_width=True)
+        (tw, th), baseline = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, fscale, text_thick)
+
+        pad = max(3, thick)                          # padding for label bg
+        y_text = y1 - pad
+        if y_text - th - pad < 0:
+            y_text = min(y1 + th + 2*pad, H - 2)
+        x_text = max(0, min(x1, W - tw - 2*pad))
+
+        # Label background panel
+        cv2.rectangle(
+            out,
+            (x_text, max(0, y_text - th - 2*pad)),
+            (min(x_text + tw + 2*pad, W - 1), min(y_text + pad, H - 1)),
+            color,
+            -1
+        )
+        # Label text (white)
+        cv2.putText(
+            out, label,
+            (x_text + pad, y_text - baseline),
+            cv2.FONT_HERSHEY_SIMPLEX, fscale,
+            (255, 255, 255), text_thick, cv2.LINE_AA
+        )
+
+    # Display
+    if show_width is not None:
+        st.image(Image.fromarray(out[:, :, ::-1]), caption="Detections", width=int(show_width))
+    else:
+        st.image(Image.fromarray(out[:, :, ::-1]), caption="Detections", use_container_width=True)
+
 
 # ======================= ONE-BOX “Let’s Start Sorting” =======================
 # (Put this where you want the section to appear)
