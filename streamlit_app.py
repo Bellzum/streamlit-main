@@ -896,7 +896,7 @@ with st.container():
         {
             "name": "Hadrien",
             "bio": "I am an actuary - If i'm not looking at spreadsheets or models, I'll be outdoors running or hiking somewhere !",
-            "img": avatar("hadrien.png", "Hadrien"),
+            "img": avatar("hadrien.jpeg", "Hadrien"),
         },
     ]
 
