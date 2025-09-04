@@ -527,31 +527,12 @@ def draw_and_show(image_pil: Image.Image, dets):
         cv2.putText(out, label, (x_text + 3, y_text - 2), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,255,255), 1, cv2.LINE_AA)
     st.image(Image.fromarray(out[:, :, ::-1]), caption="Detections", use_container_width=True)
 
-
-
 # ======================= ONE-BOX “Let’s Start Sorting” =======================
-
-# Reusable highlight box (put once above the section)
-st.markdown("""
-<style>
-.info-box{
-  background:#FBFFEB;     /* soft lime-ivory */
-  color:#23391D;          /* deep green text */
-  border-radius:12px;
-  padding:12px 14px;
-  font-weight:600;
-  border:1px solid rgba(44, 74, 32, 0.12); /* subtle edge; optional */
-}
-</style>
-""", unsafe_allow_html=True)
-
-def info_box(inner_html: str):
-    """Render a styled info box. Pass HTML (e.g., <ul>, <strong>, text)."""
-    st.markdown(f'<div class="info-box">{inner_html}</div>', unsafe_allow_html=True)
-# -------------------------------------------------------------------------
+# (Put this where you want the section to appear)
 
 st.markdown("""
 <style>
+/* Header strip */
 .section-cover{
   display:flex; align-items:center; gap:10px;
   padding:14px 18px; margin:14px 0 0;
@@ -567,6 +548,8 @@ st.markdown("""
   border:1px solid rgba(255,255,255,.28);
   padding:4px 10px; border-radius:999px; font-size:.85rem;
 }
+
+/* BODY “box” = the VERY NEXT block after .section-cover */
 .section-cover + div:has(> div[data-testid="stVerticalBlock"]){
   background:var(--card,#fff);
   border:1px solid var(--bd,#E5EFE3);
@@ -574,19 +557,35 @@ st.markdown("""
   padding:16px 18px;
   box-shadow:0 6px 24px rgba(0,0,0,.06);
 }
-.citybadge{ display:inline-block; background:var(--pill,#EEF7E9); padding:4px 10px;
-            border-radius:999px; border:1px solid var(--bd,#E5EFE3); color:var(--pri2,#4FA25A); }
-ol.howto{ margin:0.2rem 0 0.8rem 1.2rem; }
-</style>
 
-<div id="features"></div>
-<div class="section-cover">
-  <div class="eco-emoji">🧭</div>
-  <div class="title">Let’s Start Sorting</div>
-  <div class="badge">App features</div>
-</div>
+/* Fallback for browsers without :has() (keeps layout usable) */
+.section-cover + div{
+  background:var(--card,#fff);
+  border:1px solid var(--bd,#E5EFE3);
+  border-top:none; border-radius:0 0 22px 22px;
+  padding:16px 18px;
+  box-shadow:0 6px 24px rgba(0,0,0,.06);
+}
+</style>
 """, unsafe_allow_html=True)
 
+# ---------- Helper to start a section (ensures correct order) ----------
+def start_section(section_id: str, title: str, emoji: str, badge: str = ""):
+    st.markdown(
+        f"""
+        <div id="{section_id}"></div>
+        <div class="section-cover">
+          <div class="eco-emoji">{emoji}</div>
+          <div class="title">{title}</div>
+          {f'<div class="badge">{badge}</div>' if badge else ''}
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+    # IMPORTANT: return a container immediately so it becomes the “next block”
+    return st.container()
+    
+# Everything below renders inside the styled “same box”
 with st.container():
     # City / Ward row
     c1, c2 = st.columns([2, 6], vertical_alignment="center")
@@ -660,7 +659,7 @@ with st.container():
     # Status line
     st.caption("Model loaded ✅")
 
-    # Detection flow
+    # Detection flow (uses your existing run_detection/draw_and_show helpers)
     if image is not None:
         st.image(image, caption="Input", use_container_width=True)
         should_run = auto_run or st.button("Run detection")
@@ -680,9 +679,20 @@ with st.container():
                 else:
                     st.caption("No local guidance to show for these detections.")
             else:
-                info_box(
-                    "All detections were filtered by thresholds. "
-                    "Try lowering per-class thresholds or min box area."
+                st.markdown(
+                    """
+                    <div style="
+                    background:#EAF4FF;
+                    color:#0B3A67;
+                    border:1px solid #B9D7FF;
+                    border-radius:12px;
+                    padding:12px 14px;
+                    font-weight:600;
+                    ">
+                    All detections were filtered by thresholds. Try lowering per-class thresholds or min box area.
+                    </div>
+                    """,
+                    unsafe_allow_html=True
                 )
 
 # ======================= Impact & SDGs (container) =======================
