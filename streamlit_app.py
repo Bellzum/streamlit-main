@@ -732,14 +732,13 @@ st.markdown("""
 with st.container():
     st.markdown(
         """
-        <div style="
-        background:#EAF4FF;
-        color:#0B3A67;
-        border:1px solid #B9D7FF;
-        border-radius:12px;
-        padding:12px 14px;
-        font-weight:600;
-        ">
+      <div style="
+      background:#E5EFE3;
+      color:#23391D;
+      border-radius:12px;
+      padding:12px 14px;
+      font-weight:600;
+      ">
         <ul style="margin:0; padding-left:18px;">
             <li><strong>Carbon credits (what they are):</strong> A carbon credit represents <strong>1 tonne of CO₂ equivalent</strong> reduced or removed. Credits exist only when a <strong>registered project</strong> follows an <strong>approved methodology</strong> and passes <strong>MRV</strong>. They are then <strong>issued on a registry</strong> such as Gold Standard, Verra, or Japan’s J-Credit.</li>
             <li style="margin-top:8px;"><strong>This app does not issue credits.</strong> It helps people sort properly. Educational CO₂e-avoided estimates are okay, but they are <strong>not credits</strong>.</li>
@@ -795,9 +794,8 @@ with st.container():
     st.markdown(
     """
     <div style="
-      background:#EAF4FF;
-      color:#0B3A67;
-      border:1px solid #B9D7FF;
+      background:#E5EFE3;
+      color:#23391D;
       border-radius:12px;
       padding:12px 14px;
       font-weight:600;
