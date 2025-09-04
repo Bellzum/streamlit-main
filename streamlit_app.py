@@ -388,55 +388,38 @@ def _guide_link(url: str, label: str):
     st.markdown(f'<a class="eco-link" href="{url}" target="_blank" rel="noopener">{label}</a>', unsafe_allow_html=True)
 
 def _guidance_text(info: dict):
-    steps_li = "".join(f"<li>{s}</li>" for s in info.get("steps", []))
+    st.markdown('<div class="eco-section-title-primary">How to put out</div>', unsafe_allow_html=True)
+    st.markdown('<ul class="eco-list">', unsafe_allow_html=True)
+    for step in info["steps"]:
+        st.markdown(f'<li>{step}</li>', unsafe_allow_html=True)
+    st.markdown('</ul>', unsafe_allow_html=True)
 
-    why_html = ""
     if info.get("why_separate"):
-        why_li = "".join(f"<li>{r}</li>" for r in info["why_separate"])
-        why_html = f"""
-        <div class="eco-section-title">How to manage</div>
-        <ul class="eco-list">{why_li}</ul>
-        """
+        st.markdown('<div class="eco-section-title">How to manage</div>', unsafe_allow_html=True)
+        st.markdown('<ul class="eco-list">', unsafe_allow_html=True)
+        for reason in info["why_separate"]:
+            st.markdown(f'<li>{reason}</li>', unsafe_allow_html=True)
+        st.markdown('</ul>', unsafe_allow_html=True)
 
-    rec_html = ""
     if info.get("recycles_to"):
-        chips = "".join(f'<div class="chip">{c}</div>' for c in info["recycles_to"])
-        rec_html = f"""
-        <div class="eco-section-title">Commonly recycled into</div>
-        <div class="chip-row">{chips}</div>
-        """
+        st.markdown('<div class="eco-section-title">Commonly recycled into</div>', unsafe_allow_html=True)
+        st.markdown('<div class="chip-row">', unsafe_allow_html=True)
+        for item in info["recycles_to"]:
+            st.markdown(f'<div class="chip">{item}</div>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
 
-    facts_html = ""
     facts = info.get("facts", [])
     if facts:
-        facts_li = "".join(f"<li>{f['text']}</li>" for f in facts)
-        links = "".join(
-            f'<a class="eco-link" href="{f["url"]}" target="_blank" rel="noopener">Learn more · {_domain_label(f["url"])}</a>'
-            for f in facts
-        )
-        facts_html = f"""
-        <div class="eco-section-title">Did you know?</div>
-        <ul class="eco-list">{facts_li}</ul>
-        <div class="eco-links">{links}</div>
-        """
-
-    html = f"""
-    <div style="
-      background:#E5EFE3;
-      color:#23391D;
-      border-radius:12px;
-      padding:12px 14px;
-      font-weight:600;
-      border:1px solid rgba(44,74,32,0.12);
-    ">
-      <div class="eco-section-title-primary">How to put out</div>
-      <ul class="eco-list">{steps_li}</ul>
-      {why_html}
-      {rec_html}
-      {facts_html}
-    </div>
-    """
-    st.markdown(html, unsafe_allow_html=True)
+        st.markdown('<div class="eco-section-title">Did you know?</div>', unsafe_allow_html=True)
+        st.markdown('<ul class="eco-list">', unsafe_allow_html=True)
+        for fact in facts:
+            st.markdown(f'<li>{fact["text"]}</li>', unsafe_allow_html=True)
+        st.markdown('</ul>', unsafe_allow_html=True)
+        st.markdown('<div class="eco-links">', unsafe_allow_html=True)
+        for fact in facts:
+            dom = _domain_label(fact["url"])
+            _guide_link(fact["url"], f"Learn more · {dom}")
+        st.markdown('</div>', unsafe_allow_html=True)
 
 def show_guidance_card(label: str, count: int = 0, GUIDE=None):
     info = GUIDE.get(label) if GUIDE else None
