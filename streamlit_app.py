@@ -422,9 +422,12 @@ def _guidance_text(info: dict):
         st.markdown('</div>', unsafe_allow_html=True)
 
 def show_guidance_card(label: str, count: int = 0, GUIDE=None):
+    """Render a guidance card with a green background for the entire body."""
     info = GUIDE.get(label) if GUIDE else None
-    if not info: return
-        # Make the entire card the green box (overrides .eco-card default white)
+    if not info:
+        return
+
+    # Make the entire card the green box (overrides .eco-card default white)
     st.markdown(
         '<div class="eco-card" '
         'style="background:#E5EFE3; color:#23391D; '
@@ -440,9 +443,10 @@ def show_guidance_card(label: str, count: int = 0, GUIDE=None):
         <div class="eco-badge">Detected: {count}</div>
       </div>
     """, unsafe_allow_html=True)
-    
+
     if info.get("icons"):
         st.image(info["icons"], width=48, caption=[""]*len(info["icons"]))
+
     imgs = info.get("images") or []
     if imgs:
         left, right = st.columns([1, 2])
@@ -450,18 +454,22 @@ def show_guidance_card(label: str, count: int = 0, GUIDE=None):
             if len(imgs) == 1:
                 st.image(imgs[0], use_container_width=True)
             elif len(imgs) <= 3:
-                for im in imgs: st.image(im, use_container_width=True)
+                for im in imgs: 
+                    st.image(im, use_container_width=True)
             else:
                 st.image(imgs, width=160, caption=[""]*len(imgs))
         with right:
             _guidance_text(info)
     else:
         _guidance_text(info)
+
     st.markdown('<div class="eco-links">', unsafe_allow_html=True)
     if info.get("poster"):
         _guide_link(info["poster"], f"📄 Poster (PDF) · {_domain_label(info['poster'])}")
     _guide_link(info["link"], f"🌐 Official guidance · {_domain_label(info['link'])}")
     st.markdown('</div>', unsafe_allow_html=True)
+
+    # Close the green card div
     st.markdown('</div>', unsafe_allow_html=True)
 
 # ======================= Detection helpers =======================
