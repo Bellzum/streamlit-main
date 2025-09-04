@@ -733,9 +733,8 @@ with st.container():
     st.markdown(
     """
     <div style="
-      background:#EAF4FF;
-      color:#0B3A67;
-      border:1px solid #B9D7FF;
+      background:#FBFFEB;
+      color:#23391D;
       border-radius:12px;
       padding:12px 14px;
       font-weight:600;
