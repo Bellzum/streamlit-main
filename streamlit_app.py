@@ -668,7 +668,21 @@ with st.container():
                 else:
                     st.caption("No local guidance to show for these detections.")
             else:
-                st.info("All detections were filtered by thresholds. Try lowering per-class thresholds or min box area.")
+                st.markdown(
+                    """
+                    <div style="
+                    background:#EAF4FF;
+                    color:#0B3A67;
+                    border:1px solid #B9D7FF;
+                    border-radius:12px;
+                    padding:12px 14px;
+                    font-weight:600;
+                    ">
+                    All detections were filtered by thresholds. Try lowering per-class thresholds or min box area.
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
 
 # ======================= Impact & SDGs (container) =======================
 st.markdown("""
