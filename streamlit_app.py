@@ -388,38 +388,67 @@ def _guide_link(url: str, label: str):
     st.markdown(f'<a class="eco-link" href="{url}" target="_blank" rel="noopener">{label}</a>', unsafe_allow_html=True)
 
 def _guidance_text(info: dict):
-    st.markdown('<div class="eco-section-title-primary">How to put out</div>', unsafe_allow_html=True)
-    st.markdown('<ul class="eco-list">', unsafe_allow_html=True)
-    for step in info["steps"]:
-        st.markdown(f'<li>{step}</li>', unsafe_allow_html=True)
-    st.markdown('</ul>', unsafe_allow_html=True)
+    # Build one HTML string so the wrapper <div> isn't split across Streamlit elements.
+    html = []
 
-    if info.get("why_separate"):
-        st.markdown('<div class="eco-section-title">How to manage</div>', unsafe_allow_html=True)
-        st.markdown('<ul class="eco-list">', unsafe_allow_html=True)
-        for reason in info["why_separate"]:
-            st.markdown(f'<li>{reason}</li>', unsafe_allow_html=True)
-        st.markdown('</ul>', unsafe_allow_html=True)
+    # Wrapper (your requested colors)
+    html.append("""
+    <div style="
+      background:#E5EFE3;
+      color:#23391D;
+      border-radius:12px;
+      padding:12px 14px;
+      font-weight:600;
+    ">
+    """)
 
-    if info.get("recycles_to"):
-        st.markdown('<div class="eco-section-title">Commonly recycled into</div>', unsafe_allow_html=True)
-        st.markdown('<div class="chip-row">', unsafe_allow_html=True)
-        for item in info["recycles_to"]:
-            st.markdown(f'<div class="chip">{item}</div>', unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+    # How to put out
+    html.append('<div class="eco-section-title-primary" style="margin-top:0;">How to put out</div>')
+    html.append('<ul class="eco-list">')
+    for step in info.get("steps", []):
+        html.append(f"<li>{step}</li>")
+    html.append("</ul>")
 
+    # Why separate / How to manage
+    why = info.get("why_separate")
+    if why:
+        html.append('<div class="eco-section-title">How to manage</div>')
+        html.append('<ul class="eco-list">')
+        for reason in why:
+            html.append(f"<li>{reason}</li>")
+        html.append("</ul>")
+
+    # Recycles to
+    recycles = info.get("recycles_to")
+    if recycles:
+        html.append('<div class="eco-section-title">Commonly recycled into</div>')
+        html.append('<div class="chip-row">')
+        for item in recycles:
+            html.append(f'<div class="chip">{item}</div>')
+        html.append("</div>")
+
+    # Facts + links
     facts = info.get("facts", [])
     if facts:
-        st.markdown('<div class="eco-section-title">Did you know?</div>', unsafe_allow_html=True)
-        st.markdown('<ul class="eco-list">', unsafe_allow_html=True)
+        html.append('<div class="eco-section-title">Did you know?</div>')
+        html.append('<ul class="eco-list">')
         for fact in facts:
-            st.markdown(f'<li>{fact["text"]}</li>', unsafe_allow_html=True)
-        st.markdown('</ul>', unsafe_allow_html=True)
-        st.markdown('<div class="eco-links">', unsafe_allow_html=True)
+            html.append(f"<li>{fact['text']}</li>")
+        html.append("</ul>")
+
+        # Inline links row
+        html.append('<div class="eco-links">')
         for fact in facts:
             dom = _domain_label(fact["url"])
-            _guide_link(fact["url"], f"Learn more · {dom}")
-        st.markdown('</div>', unsafe_allow_html=True)
+            html.append(
+                f'<a class="eco-link" href="{fact["url"]}" target="_blank" rel="noopener">Learn more · {dom}</a>'
+            )
+        html.append("</div>")
+
+    # Close wrapper
+    html.append("</div>")
+
+    st.markdown("".join(html), unsafe_allow_html=True)
 
 def show_guidance_card(label: str, count: int = 0, GUIDE=None):
     info = GUIDE.get(label) if GUIDE else None
