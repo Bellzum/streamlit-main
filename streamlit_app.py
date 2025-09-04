@@ -521,8 +521,8 @@ def draw_and_show(
     H, W = out.shape[:2]
 
     # Auto-size based on image dimensions (tweak multipliers to taste)
-    auto_thick = max(2, int(0.0030 * (H + W)))   # a bit thicker than before
-    auto_font  = max(0.6, 0.0008 * (H + W))      # bigger font than before
+    auto_thick = max(2, int(0.0027 * (H + W)))   # a bit thicker than before
+    auto_font  = max(0.6, 0.0009 * (H + W))      # bigger font than before
 
     thick = thickness if thickness is not None else auto_thick
     fscale = font_scale if font_scale is not None else auto_font
