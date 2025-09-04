@@ -528,16 +528,28 @@ def draw_and_show(image_pil: Image.Image, dets):
     st.image(Image.fromarray(out[:, :, ::-1]), caption="Detections", use_container_width=True)
 
 # ======================= ONE-BOX “Let’s Start Sorting” =======================
-# --- put this CSS somewhere ABOVE the section (only once) ---
+# --- Header strip (unchanged) ---
 st.markdown("""
 <style>
-/* header strip look (unchanged) */
+/* Body box: style the VERY NEXT Streamlit block after .section-cover */
+.section-cover + div{
+  background:#FBFFEB;           /* soft lime-ivory */
+  color:#23391D;                /* deep green text */
+  border:1px solid rgba(44,74,32,0.12);
+  border-top:none;              /* merges with the header strip */
+  border-radius:0 0 22px 22px;  /* rounded bottom corners */
+  padding:16px 18px;
+  box-shadow:0 6px 24px rgba(0,0,0,.06);
+}
+
+/* Keep your original header styles */
 .section-cover{
   display:flex; align-items:center; gap:10px;
   padding:14px 18px; margin:14px 0 0;
   background:linear-gradient(90deg, var(--pri2,#4FA25A), var(--pri,#79C16D));
   color:#fff; border:1px solid var(--bd,#E5EFE3);
-  border-radius:22px 22px 0 0; box-shadow:0 6px 24px rgba(0,0,0,.06);
+  border-radius:22px 22px 0 0;
+  box-shadow:0 6px 24px rgba(0,0,0,.06);
 }
 .section-cover .eco-emoji{font-size:1.2rem;}
 .section-cover .title{font-weight:900; font-size:1.08rem; letter-spacing:-.01em;}
@@ -547,34 +559,12 @@ st.markdown("""
   padding:4px 10px; border-radius:999px; font-size:.85rem;
 }
 
-/* BOX THE VERY NEXT STREAMLIT BLOCK AFTER THE HEADER
-   IMPORTANT: there must be NOTHING between the header markdown and the container */
-.section-cover + div:has(> div[data-testid="stVerticalBlock"]){
-  background:var(--card,#fff);
-  border:1px solid var(--bd,#E5EFE3);
-  border-top:none; border-radius:0 0 22px 22px;
-  padding:16px 18px; box-shadow:0 6px 24px rgba(0,0,0,.06);
-}
-
-/* helpers */
+/* minor utilities you already had */
 .citybadge{ display:inline-block; background:var(--pill,#EEF7E9); padding:4px 10px;
             border-radius:999px; border:1px solid var(--bd,#E5EFE3); color:var(--pri2,#4FA25A); }
 ol.howto{ margin:0.2rem 0 0.8rem 1.2rem; }
-
-/* soft info/warning box you wanted */
-.info-box{
-  background:#FBFFEB; color:#23391D;
-  border-radius:12px; padding:12px 14px; font-weight:600;
-  border:1px solid rgba(44,74,32,0.12);
-}
 </style>
-""", unsafe_allow_html=True)
 
-def info_box(inner_html: str):
-    st.markdown(f'<div class="info-box">{inner_html}</div>', unsafe_allow_html=True)
-
-# ---------- 1) HEADER STRIP ----------
-st.markdown("""
 <div id="features"></div>
 <div class="section-cover">
   <div class="eco-emoji">🧭</div>
@@ -583,7 +573,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# ---------- 2) IMMEDIATELY start the body container (no widgets in between) ----------
+# --- BODY: must be the VERY NEXT block after the header above ---
 with st.container():
     # City / Ward row
     c1, c2 = st.columns([2, 6], vertical_alignment="center")
@@ -623,9 +613,10 @@ with st.container():
         if shot:
             image = Image.open(shot).convert("RGB")
 
-    # Advanced settings
+    # Advanced settings (defaults)
     _REC_CONF=0.00; _REC_IOU=0.00; _REC_IMGSZ=200
     _REC_BOTTLE=0.20; _REC_CAN=0.20; _REC_FOAM=0.20; _REC_AREA_PCT=0.20; _REC_TTA=True
+
     conf=_REC_CONF; iou=_REC_IOU; imgsz=_REC_IMGSZ
     bottle_min=_REC_BOTTLE; can_min=_REC_CAN; foam_min=_REC_FOAM
     min_area_pct=_REC_AREA_PCT; tta=_REC_TTA
@@ -676,12 +667,20 @@ with st.container():
                 else:
                     st.caption("No local guidance to show for these detections.")
             else:
-                info_box(
-                    "All detections were filtered by thresholds. "
-                    "Try lowering per-class thresholds or min box area."
+                # friendly inline notice (same palette as box)
+                st.markdown(
+                    """
+                    <div style="
+                      background:#FBFFEB; color:#23391D;
+                      border:1px solid rgba(44,74,32,0.12);
+                      border-radius:10px; padding:10px 12px; font-weight:600;">
+                      All detections were filtered by thresholds. Try lowering per-class thresholds or min box area.
+                    </div>
+                    """,
+                    unsafe_allow_html=True
                 )
 
-                
+
 # ======================= Impact & SDGs (container) =======================
 st.markdown("""
 <style>
