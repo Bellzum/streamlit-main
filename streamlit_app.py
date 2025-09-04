@@ -170,7 +170,7 @@ def apply_theme():
       <div class="brand">{nav_brand_img}</div>
       <div class="links">
         <a href="#features">App features</a>
-        <a href="#sdgs">Impact&amp; SDGs</a>
+        <a href="#sdgs">Impact &amp; SDGs</a>
         <a href="#about">About us</a>
       </div>
     </div>
