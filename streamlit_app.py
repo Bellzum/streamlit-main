@@ -615,7 +615,7 @@ with st.container():
             image = Image.open(shot).convert("RGB")
 
     # Advanced settings
-    _REC_CONF=0.00; _REC_IOU=0.00; _REC_IMGSZ=200
+    _REC_CONF=0.00; _REC_IOU=0.00; _REC_IMGSZ=416
     _REC_BOTTLE=0.20; _REC_CAN=0.20; _REC_FOAM=0.20; _REC_AREA_PCT=0.20; _REC_TTA=True
 
     conf=_REC_CONF; iou=_REC_IOU; imgsz=_REC_IMGSZ
@@ -669,20 +669,20 @@ with st.container():
                     st.caption("No local guidance to show for these detections.")
             else:
                 st.markdown(
-                        """
-                        <div style="
-                        background:#EAF4FF;
-                        color:#0B3A67;
-                        border:1px solid #B9D7FF;
-                        border-radius:12px;
-                        padding:12px 14px;
-                        font-weight:600;
-                        ">
-                        All detections were filtered by thresholds. Try lowering per-class thresholds or min box area.
-                        </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
+                    """
+                    <div style="
+                    background:#EAF4FF;
+                    color:#0B3A67;
+                    border:1px solid #B9D7FF;
+                    border-radius:12px;
+                    padding:12px 14px;
+                    font-weight:600;
+                    ">
+                    All detections were filtered by thresholds. Try lowering per-class thresholds or min box area.
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
 
 # ======================= Impact & SDGs (container) =======================
 st.markdown("""
@@ -730,10 +730,24 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 with st.container():
-    st.markdown("""
-- **Carbon credits (what they are):** A carbon credit represents **1 tonne of CO₂ equivalent** reduced or removed. Credits exist only when a **registered project** follows an **approved methodology** and passes **MRV**. They are then **issued on a registry** such as Gold Standard, Verra, or Japan’s J-Credit.<br><br>
-- **This app does not issue credits.** It helps people sort properly. Educational CO₂e-avoided estimates are okay, but they are **not credits**.
-""", unsafe_allow_html=True)
+    st.markdown(
+        """
+        <div style="
+        background:#EAF4FF;
+        color:#0B3A67;
+        border:1px solid #B9D7FF;
+        border-radius:12px;
+        padding:12px 14px;
+        font-weight:600;
+        ">
+        <ul style="margin:0; padding-left:18px;">
+            <li><strong>Carbon credits (what they are):</strong> A carbon credit represents <strong>1 tonne of CO₂ equivalent</strong> reduced or removed. Credits exist only when a <strong>registered project</strong> follows an <strong>approved methodology</strong> and passes <strong>MRV</strong>. They are then <strong>issued on a registry</strong> such as Gold Standard, Verra, or Japan’s J-Credit.</li>
+            <li style="margin-top:8px;"><strong>This app does not issue credits.</strong> It helps people sort properly. Educational CO₂e-avoided estimates are okay, but they are <strong>not credits</strong>.</li>
+        </ul>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
     # Link pills (uses constants you defined earlier for the URLs)
     st.markdown(
@@ -778,10 +792,25 @@ st.markdown("""
 
 with st.container():
     # Intro text
-    st.markdown("""
-    <p><strong>When AI Sees Litter</strong> is a community project that helps people sort waste correctly using computer vision and local rules.
+    st.markdown(
+    """
+    <div style="
+      background:#EAF4FF;
+      color:#0B3A67;
+      border:1px solid #B9D7FF;
+      border-radius:12px;
+      padding:12px 14px;
+      font-weight:600;
+    ">
+      <ul style="margin:0; padding-left:18px;">
+        <p><strong>When AI Sees Litter</strong> is a community project that helps people sort waste correctly using computer vision and local rules.
     Shibuya is the first city we support. More cities are on the way.</p>
-    """, unsafe_allow_html=True)
+      </ul>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
 
     # Member cards CSS
     st.markdown("""
