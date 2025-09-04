@@ -530,17 +530,14 @@ def draw_and_show(image_pil: Image.Image, dets):
 # ======================= ONE-BOX “Let’s Start Sorting” =======================
 # (Put this where you want the section to appear)
 
-# CSS: style the NEXT sibling container after the header as the section body.
 st.markdown("""
 <style>
-/* Header strip (top of the box) */
 .section-cover{
   display:flex; align-items:center; gap:10px;
   padding:14px 18px; margin:14px 0 0;
   background:linear-gradient(90deg, var(--pri2,#4FA25A), var(--pri,#79C16D));
   color:#fff; border:1px solid var(--bd,#E5EFE3);
-  border-radius:22px 22px 0 0;
-  box-shadow:0 6px 24px rgba(0,0,0,.06);
+  border-radius:22px 22px 0 0; box-shadow:0 6px 24px rgba(0,0,0,.06);
 }
 .section-cover .eco-emoji{font-size:1.2rem;}
 .section-cover .title{font-weight:900; font-size:1.08rem; letter-spacing:-.01em;}
@@ -549,23 +546,31 @@ st.markdown("""
   border:1px solid rgba(255,255,255,.28);
   padding:4px 10px; border-radius:999px; font-size:.85rem;
 }
-
-/* Magic: style the very next Streamlit block after .section-cover.
-   This makes the container look like the same physical box. */
-.section-cover + div:has(> div[data-testid="stVerticalBlock"]){
+/* explicit body wrapper — this is the visible box */
+.section-body{
   background:var(--card,#fff);
   border:1px solid var(--bd,#E5EFE3);
   border-top:none; border-radius:0 0 22px 22px;
-  padding:16px 18px;
-  box-shadow:0 6px 24px rgba(0,0,0,.06);
+  padding:16px 18px; box-shadow:0 6px 24px rgba(0,0,0,.06);
 }
-
-/* Minor utilities */
+/* helpers */
 .citybadge{ display:inline-block; background:var(--pill,#EEF7E9); padding:4px 10px;
             border-radius:999px; border:1px solid var(--bd,#E5EFE3); color:var(--pri2,#4FA25A); }
 ol.howto{ margin:0.2rem 0 0.8rem 1.2rem; }
+/* soft warning/info box */
+.info-box{
+  background:#FBFFEB; color:#23391D;
+  border-radius:12px; padding:12px 14px; font-weight:600;
+  border:1px solid rgba(44,74,32,0.12);
+}
 </style>
+""", unsafe_allow_html=True)
 
+def info_box(inner_html: str):
+    st.markdown(f'<div class="info-box">{inner_html}</div>', unsafe_allow_html=True)
+
+# ---------- header strip (kept) ----------
+st.markdown("""
 <div id="features"></div>
 <div class="section-cover">
   <div class="eco-emoji">🧭</div>
@@ -573,6 +578,7 @@ ol.howto{ margin:0.2rem 0 0.8rem 1.2rem; }
   <div class="badge">App features</div>
 </div>
 """, unsafe_allow_html=True)
+
 
 # Everything below renders inside the styled “same box”
 with st.container():
