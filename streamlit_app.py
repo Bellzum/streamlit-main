@@ -527,13 +527,29 @@ def draw_and_show(image_pil: Image.Image, dets):
         cv2.putText(out, label, (x_text + 3, y_text - 2), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,255,255), 1, cv2.LINE_AA)
     st.image(Image.fromarray(out[:, :, ::-1]), caption="Detections", use_container_width=True)
 
-# ======================= ONE-BOX “Let’s Start Sorting” =======================
-# (Put this where you want the section to appear)
-
-# CSS: style the NEXT sibling container after the header as the section body.
+# ---------- Reusable highlight box (add once above the sections) ----------
 st.markdown("""
 <style>
-/* Header strip (top of the box) */
+.info-box{
+  background:#FBFFEB;     /* soft lime-ivory */
+  color:#23391D;          /* deep green text */
+  border-radius:12px;
+  padding:12px 14px;
+  font-weight:600;
+  border:1px solid rgba(44, 74, 32, 0.12); /* subtle edge; optional */
+}
+</style>
+""", unsafe_allow_html=True)
+
+def info_box(inner_html: str):
+    """Render a styled info box. Pass already-escaped HTML (e.g., <ul>, <strong>, text)."""
+    st.markdown(f'<div class="info-box">{inner_html}</div>', unsafe_allow_html=True)
+# -------------------------------------------------------------------------
+
+
+# ======================= ONE-BOX “Let’s Start Sorting” =======================
+st.markdown("""
+<style>
 .section-cover{
   display:flex; align-items:center; gap:10px;
   padding:14px 18px; margin:14px 0 0;
@@ -549,9 +565,6 @@ st.markdown("""
   border:1px solid rgba(255,255,255,.28);
   padding:4px 10px; border-radius:999px; font-size:.85rem;
 }
-
-/* Magic: style the very next Streamlit block after .section-cover.
-   This makes the container look like the same physical box. */
 .section-cover + div:has(> div[data-testid="stVerticalBlock"]){
   background:var(--card,#fff);
   border:1px solid var(--bd,#E5EFE3);
@@ -559,8 +572,6 @@ st.markdown("""
   padding:16px 18px;
   box-shadow:0 6px 24px rgba(0,0,0,.06);
 }
-
-/* Minor utilities */
 .citybadge{ display:inline-block; background:var(--pill,#EEF7E9); padding:4px 10px;
             border-radius:999px; border:1px solid var(--bd,#E5EFE3); color:var(--pri2,#4FA25A); }
 ol.howto{ margin:0.2rem 0 0.8rem 1.2rem; }
@@ -574,7 +585,6 @@ ol.howto{ margin:0.2rem 0 0.8rem 1.2rem; }
 </div>
 """, unsafe_allow_html=True)
 
-# Everything below renders inside the styled “same box”
 with st.container():
     # City / Ward row
     c1, c2 = st.columns([2, 6], vertical_alignment="center")
@@ -648,7 +658,7 @@ with st.container():
     # Status line
     st.caption("Model loaded ✅")
 
-    # Detection flow (uses your existing run_detection/draw_and_show helpers)
+    # Detection flow
     if image is not None:
         st.image(image, caption="Input", use_container_width=True)
         should_run = auto_run or st.button("Run detection")
@@ -668,20 +678,9 @@ with st.container():
                 else:
                     st.caption("No local guidance to show for these detections.")
             else:
-                st.markdown(
-                    """
-                    <div style="
-                    background:#EAF4FF;
-                    color:#0B3A67;
-                    border:1px solid #B9D7FF;
-                    border-radius:12px;
-                    padding:12px 14px;
-                    font-weight:600;
-                    ">
-                    All detections were filtered by thresholds. Try lowering per-class thresholds or min box area.
-                    </div>
-                    """,
-                    unsafe_allow_html=True
+                info_box(
+                    "All detections were filtered by thresholds. "
+                    "Try lowering per-class thresholds or min box area."
                 )
 
 # ======================= Impact & SDGs (container) =======================
