@@ -528,9 +528,10 @@ def draw_and_show(image_pil: Image.Image, dets):
     st.image(Image.fromarray(out[:, :, ::-1]), caption="Detections", use_container_width=True)
 
 # ======================= ONE-BOX “Let’s Start Sorting” =======================
-# ===== Styles for header + body box (once, above the section) =====
+# --- put this CSS somewhere ABOVE the section (only once) ---
 st.markdown("""
 <style>
+/* header strip look (unchanged) */
 .section-cover{
   display:flex; align-items:center; gap:10px;
   padding:14px 18px; margin:14px 0 0;
@@ -545,18 +546,22 @@ st.markdown("""
   border:1px solid rgba(255,255,255,.28);
   padding:4px 10px; border-radius:999px; font-size:.85rem;
 }
-/* explicit body wrapper — this is the visible box */
-.section-body{
+
+/* BOX THE VERY NEXT STREAMLIT BLOCK AFTER THE HEADER
+   IMPORTANT: there must be NOTHING between the header markdown and the container */
+.section-cover + div:has(> div[data-testid="stVerticalBlock"]){
   background:var(--card,#fff);
   border:1px solid var(--bd,#E5EFE3);
   border-top:none; border-radius:0 0 22px 22px;
   padding:16px 18px; box-shadow:0 6px 24px rgba(0,0,0,.06);
 }
+
 /* helpers */
 .citybadge{ display:inline-block; background:var(--pill,#EEF7E9); padding:4px 10px;
             border-radius:999px; border:1px solid var(--bd,#E5EFE3); color:var(--pri2,#4FA25A); }
 ol.howto{ margin:0.2rem 0 0.8rem 1.2rem; }
-/* soft warning/info box */
+
+/* soft info/warning box you wanted */
 .info-box{
   background:#FBFFEB; color:#23391D;
   border-radius:12px; padding:12px 14px; font-weight:600;
@@ -568,7 +573,7 @@ ol.howto{ margin:0.2rem 0 0.8rem 1.2rem; }
 def info_box(inner_html: str):
     st.markdown(f'<div class="info-box">{inner_html}</div>', unsafe_allow_html=True)
 
-# ---------- header strip (kept) ----------
+# ---------- 1) HEADER STRIP ----------
 st.markdown("""
 <div id="features"></div>
 <div class="section-cover">
@@ -578,10 +583,8 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# ---------- body begins: everything inside .section-body box ----------
+# ---------- 2) IMMEDIATELY start the body container (no widgets in between) ----------
 with st.container():
-    st.markdown('<div class="section-body">', unsafe_allow_html=True)
-
     # City / Ward row
     c1, c2 = st.columns([2, 6], vertical_alignment="center")
     with c1:
@@ -620,10 +623,9 @@ with st.container():
         if shot:
             image = Image.open(shot).convert("RGB")
 
-    # Advanced settings (use your IMGSZ_OPTIONS etc.)
+    # Advanced settings
     _REC_CONF=0.00; _REC_IOU=0.00; _REC_IMGSZ=200
     _REC_BOTTLE=0.20; _REC_CAN=0.20; _REC_FOAM=0.20; _REC_AREA_PCT=0.20; _REC_TTA=True
-
     conf=_REC_CONF; iou=_REC_IOU; imgsz=_REC_IMGSZ
     bottle_min=_REC_BOTTLE; can_min=_REC_CAN; foam_min=_REC_FOAM
     min_area_pct=_REC_AREA_PCT; tta=_REC_TTA
@@ -654,7 +656,7 @@ with st.container():
     # Status line
     st.caption("Model loaded ✅")
 
-    # Detection flow (uses your helpers)
+    # Detection flow
     if image is not None:
         st.image(image, caption="Input", use_container_width=True)
         should_run = auto_run or st.button("Run detection")
@@ -679,9 +681,7 @@ with st.container():
                     "Try lowering per-class thresholds or min box area."
                 )
 
-    # close the body box
-    st.markdown('</div>', unsafe_allow_html=True)
-
+                
 # ======================= Impact & SDGs (container) =======================
 st.markdown("""
 <style>
