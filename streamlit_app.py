@@ -170,7 +170,7 @@ def apply_theme():
       <div class="brand">{nav_brand_img}</div>
       <div class="links">
         <a href="#features">App features</a>
-        <a href="#sdgs">Impact&amp;SDGs</a>
+        <a href="#sdgs">Impact&amp; SDGs</a>
         <a href="#about">About us</a>
       </div>
     </div>
@@ -895,7 +895,7 @@ with st.container():
         },
         {
             "name": "Hadrien",
-            "bio": "I support model training and product polish.",
+            "bio": "I am an actuary - If i'm not looking at spreadsheets or models, I'll be outdoors running or hiking somewhere !",
             "img": avatar("hadrien.png", "Hadrien"),
         },
     ]
