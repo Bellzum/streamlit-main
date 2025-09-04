@@ -528,18 +528,18 @@ def draw_and_show(image_pil: Image.Image, dets):
     st.image(Image.fromarray(out[:, :, ::-1]), caption="Detections", use_container_width=True)
 
 # ======================= ONE-BOX “Let’s Start Sorting” =======================
-# --- Header strip (unchanged) ---
+
 st.markdown("""
 <style>
-/* Body box: style the VERY NEXT Streamlit block after .section-cover */
-.section-cover + div{
-  background:#FBFFEB;           /* soft lime-ivory */
-  color:#23391D;                /* deep green text */
-  border:1px solid rgba(44,74,32,0.12);
-  border-top:none;              /* merges with the header strip */
-  border-radius:0 0 22px 22px;  /* rounded bottom corners */
-  padding:16px 18px;
-  box-shadow:0 6px 24px rgba(0,0,0,.06);
+/* Style the Streamlit block that comes right AFTER the block that CONTAINS .section-cover */
+div:has(> .section-cover) + div{
+  background:#FBFFEB !important;           /* soft lime-ivory */
+  color:#23391D !important;                 /* deep green text */
+  border:1px solid rgba(44,74,32,0.12) !important;
+  border-top:none !important;               /* visually merges with header strip */
+  border-radius:0 0 22px 22px !important;   /* rounded bottom corners */
+  padding:16px 18px !important;
+  box-shadow:0 6px 24px rgba(0,0,0,.06) !important;
 }
 
 /* Keep your original header styles */
@@ -559,7 +559,7 @@ st.markdown("""
   padding:4px 10px; border-radius:999px; font-size:.85rem;
 }
 
-/* minor utilities you already had */
+/* utilities */
 .citybadge{ display:inline-block; background:var(--pill,#EEF7E9); padding:4px 10px;
             border-radius:999px; border:1px solid var(--bd,#E5EFE3); color:var(--pri2,#4FA25A); }
 ol.howto{ margin:0.2rem 0 0.8rem 1.2rem; }
